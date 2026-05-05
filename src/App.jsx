@@ -55,24 +55,43 @@ export default function App() {
   }
 
   const parseCSV = (csvText) => {
-    const lines = csvText.trim().split('\n')
-    const parsed = []
-    for (let i = 1; i < lines.length; i++) {
-      const parts = lines[i].split(',')
-      if (parts.length >= 3) {
-        const date = parts[0].trim()
-        const merchant = parts[1].trim()
-        const amount = parseFloat(parts[2].trim())
-        if (!isNaN(amount)) {
-          parsed.push({
-            id: Date.now() + Math.random(),
-            date,
-            merchant,
-            amount,
-            category: categorizeTransaction(merchant),
-          })
-        }
+  const lines = csvText.trim().split('\n')
+  const parsed = []
+  
+  // Detect Scotiabank format by checking header
+  const header = lines[0].toLowerCase()
+  const isScotiabank = header.includes('description') && header.includes('type of transaction')
+  
+  for (let i = 1; i < lines.length; i++) {
+    // Parse quoted CSV fields properly
+    const parts = []
+    let current = ''
+    let inQuotes = false
+    for (const char of lines[i]) {
+      if (char === '"') { inQuotes = !inQuotes }
+      else if (char === ',' && !inQuotes) { parts.push(current.trim()); current = '' }
+      else { current += char }
+    }
+    parts.push(current.trim())
+
+    if (isScotiabank && parts.length >= 7) {
+      const date = parts[1].replace(/"/g, '').trim()
+      const merchant = parts[2].replace(/"/g, '').trim()
+      const amount = parseFloat(parts[6].replace(/"/g, '').trim())
+      if (date && merchant && !isNaN(amount)) {
+        parsed.push({ id: Date.now() + Math.random(), date, merchant, amount, category: categorizeTransaction(merchant) })
       }
+    } else if (!isScotiabank && parts.length >= 3) {
+      const date = parts[0].trim()
+      const merchant = parts[1].trim()
+      const amount = parseFloat(parts[2].trim())
+      if (!isNaN(amount)) {
+        parsed.push({ id: Date.now() + Math.random(), date, merchant, amount, category: categorizeTransaction(merchant) })
+      }
+    }
+  }
+  return parsed
+}
     }
     return parsed
   }
