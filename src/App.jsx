@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
 const categoryKeywords = {
-  'SR Paycheck': ['monsoon', 'payroll', 'salary'],
+  'SR Paycheck': ['monsoon', 'payroll', 'salary', 'mb-dep'],
   'NR DS Income': ['delta school', 'ds pay'],
   'NR CK Income': ['creative kids', 'ck pay'],
   'Child Benefit': ['ccb', 'canada child'],
@@ -11,9 +11,12 @@ const categoryKeywords = {
   'Utilities': ['hydro', 'telus', 'shaw', 'apple.com/bill'],
   'Daycare': ['daycare', 'preschool'],
   'School Fees': ['school', 'tuition'],
-  'Gas & Fuel': ['shell', 'petro', 'gas'],
+  'Vehicle Payment': ['rbc loan', 'car loan', 'auto loan'],
+  'Auto Insurance': ['insurance corporation of bc', 'icbc'],
+  'Gas & Fuel': ['shell', 'petro', 'gas station'],
   'Subscriptions': ['netflix', 'chatgpt', 'icloud', 'spotify', 'disney'],
-  'Shopping': ['amazon', 'sportchek', 'walmart', 'ikea'],
+  'Shopping': ['amazon', 'sportchek', 'ikea'],
+  'Credit Card Payment': ['cibc card', 'crd. card bill', 'credit card payment', 'scotia'],
   'FHSA Savings': ['fhsa'],
   'TFSA Savings': ['tfsa'],
   'RRSP Savings': ['rrsp'],
@@ -30,7 +33,12 @@ const budgetTargets = {
   'Gas & Fuel': 350,
   'Subscriptions': 40,
   'Shopping': 500,
+  'Vehicle Payment': 644,
+  'Auto Insurance': 290,
 }
+
+const INCOME_CATEGORIES = ['SR Paycheck', 'NR DS Income', 'NR CK Income', 'Child Benefit']
+const SAVINGS_CATEGORIES = ['FHSA Savings', 'TFSA Savings', 'RRSP Savings', 'RESP Savings']
 
 export default function App() {
   const [transactions, setTransactions] = useState(() => {
@@ -47,43 +55,78 @@ export default function App() {
   const categorizeTransaction = (merchant) => {
     const text = merchant.toLowerCase()
     for (const [category, keywords] of Object.entries(categoryKeywords)) {
-      if (keywords.some(kw => text.includes(kw))) {
-        return category
-      }
+      if (keywords.some(kw => text.includes(kw))) return category
     }
     return null
+  }
+
+  const parseQuotedCSVLine = (line) => {
+    const parts = []
+    let current = ''
+    let inQuotes = false
+    for (const char of line) {
+      if (char === '"') { inQuotes = !inQuotes }
+      else if (char === ',' && !inQuotes) { parts.push(current.trim()); current = '' }
+      else { current += char }
+    }
+    parts.push(current.trim())
+    return parts
   }
 
   const parseCSV = (csvText) => {
     const lines = csvText.trim().split('\n')
     const parsed = []
     const header = lines[0].toLowerCase()
-    const isScotiabank = header.includes('description') && header.includes('type of transaction')
+
+    // Scotiabank Bank Account: has 'balance' column
+    const isScotiaBankAccount = header.includes('balance') && header.includes('type of transaction')
+    // Scotiabank Credit Card: has 'status' column
+    const isScotiaCreditCard = header.includes('status') && header.includes('type of transaction')
 
     for (let i = 1; i < lines.length; i++) {
-      const parts = []
-      let current = ''
-      let inQuotes = false
-      for (const char of lines[i]) {
-        if (char === '"') { inQuotes = !inQuotes }
-        else if (char === ',' && !inQuotes) { parts.push(current.trim()); current = '' }
-        else { current += char }
-      }
-      parts.push(current.trim())
+      const parts = parseQuotedCSVLine(lines[i])
+      const clean = (s) => (s || '').replace(/"/g, '').trim()
 
-      if (isScotiabank && parts.length >= 7) {
-        const date = parts[1].replace(/"/g, '').trim()
-        const merchant = parts[2].replace(/"/g, '').trim()
-        const amount = parseFloat(parts[6].replace(/"/g, '').trim())
-        if (date && merchant && !isNaN(amount) && amount > 0) {
-          parsed.push({ id: Date.now() + Math.random(), date, merchant, amount, category: categorizeTransaction(merchant) })
-        }
-      } else if (!isScotiabank && parts.length >= 3) {
-        const date = parts[0].trim()
-        const merchant = parts[1].trim()
-        const amount = parseFloat(parts[2].trim())
+      if (isScotiaBankAccount && parts.length >= 6) {
+        const date = clean(parts[1])
+        const description = clean(parts[2])
+        const subDescription = clean(parts[3])
+        const type = clean(parts[4]).toLowerCase()
+        const rawAmount = parseFloat(clean(parts[5]))
+        const merchant = subDescription || description
+        if (!date || !merchant || isNaN(rawAmount) || rawAmount === 0) continue
+        const amount = Math.abs(rawAmount)
+        const isCredit = type === 'credit'
+        parsed.push({
+          id: Date.now() + Math.random(),
+          date, merchant, amount,
+          type: isCredit ? 'credit' : 'debit',
+          category: categorizeTransaction(merchant)
+        })
+
+      } else if (isScotiaCreditCard && parts.length >= 7) {
+        const date = clean(parts[1])
+        const merchant = clean(parts[2])
+        const amount = parseFloat(clean(parts[6]))
+        if (!date || !merchant || isNaN(amount) || amount <= 0) continue
+        parsed.push({
+          id: Date.now() + Math.random(),
+          date, merchant, amount,
+          type: 'debit',
+          category: categorizeTransaction(merchant)
+        })
+
+      } else if (parts.length >= 3) {
+        const date = clean(parts[0])
+        const merchant = clean(parts[1])
+        const amount = parseFloat(clean(parts[2]))
         if (!isNaN(amount)) {
-          parsed.push({ id: Date.now() + Math.random(), date, merchant, amount, category: categorizeTransaction(merchant) })
+          parsed.push({
+            id: Date.now() + Math.random(),
+            date, merchant, amount: Math.abs(amount),
+            type: amount > 0 ? 'credit' : 'debit',
+            category: categorizeTransaction(merchant)
+          })
         }
       }
     }
@@ -101,16 +144,16 @@ export default function App() {
         alert(`Success! Imported ${parsed.length} transactions`)
         event.target.value = ''
       } catch (err) {
-        alert('Error importing CSV: ' + err.message)
+        alert('Error: ' + err.message)
       }
     }
     reader.readAsText(file)
   }
 
   const monthTransactions = transactions.filter(t => t.date.startsWith(month))
-  const income = monthTransactions.filter(t => ['SR Paycheck', 'NR DS Income', 'NR CK Income', 'Child Benefit'].includes(t.category)).reduce((sum, t) => sum + t.amount, 0)
-  const expenses = monthTransactions.filter(t => t.category && !['SR Paycheck', 'NR DS Income', 'NR CK Income', 'Child Benefit', 'FHSA Savings', 'TFSA Savings', 'RRSP Savings', 'RESP Savings'].includes(t.category)).reduce((sum, t) => sum + t.amount, 0)
-  const savings = monthTransactions.filter(t => ['FHSA Savings', 'TFSA Savings', 'RRSP Savings', 'RESP Savings'].includes(t.category)).reduce((sum, t) => sum + t.amount, 0)
+  const income = monthTransactions.filter(t => INCOME_CATEGORIES.includes(t.category)).reduce((sum, t) => sum + t.amount, 0)
+  const expenses = monthTransactions.filter(t => t.category && !INCOME_CATEGORIES.includes(t.category) && !SAVINGS_CATEGORIES.includes(t.category)).reduce((sum, t) => sum + t.amount, 0)
+  const savings = monthTransactions.filter(t => SAVINGS_CATEGORIES.includes(t.category)).reduce((sum, t) => sum + t.amount, 0)
   const savingsRate = income > 0 ? ((savings / income) * 100).toFixed(1) : 0
   const uncategorized = monthTransactions.filter(t => !t.category)
 
@@ -119,16 +162,14 @@ export default function App() {
   }
 
   const clearData = () => {
-    if (window.confirm('Clear all transactions?')) {
-      setTransactions([])
-    }
+    if (window.confirm('Clear all transactions?')) setTransactions([])
   }
 
   return (
     <div className="app">
       <header className="app-header">
         <h1>💰 Finance Dashboard</h1>
-        <p>Household Budget Tracker</p>
+        <p>Rathore Household Budget Tracker</p>
       </header>
 
       <nav className="tabs">
@@ -155,7 +196,7 @@ export default function App() {
                 <thead><tr><th>Category</th><th>Actual</th><th>Budget</th><th>Status</th></tr></thead>
                 <tbody>
                   {Object.entries(budgetTargets).map(([cat, budget]) => {
-                    const actual = monthTransactions.filter(t => t.category === cat).reduce((sum, t) => sum + Math.abs(t.amount), 0)
+                    const actual = monthTransactions.filter(t => t.category === cat).reduce((sum, t) => sum + t.amount, 0)
                     return (
                       <tr key={cat}>
                         <td>{cat}</td>
@@ -218,7 +259,8 @@ export default function App() {
               <label>Upload CSV File: <input type="file" accept=".csv" onChange={handleCSVUpload} /></label>
             </div>
             <h3>Supported Formats:</h3>
-            <p>✓ Scotiabank CSV export</p>
+            <p>✓ Scotiabank Credit Card CSV</p>
+            <p>✓ Scotiabank Bank Account CSV</p>
             <p>✓ Generic: Date, Merchant, Amount</p>
             <h3>Statistics:</h3>
             <p>Total transactions: {transactions.length}</p>
