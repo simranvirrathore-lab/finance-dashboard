@@ -1,917 +1,1469 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from "react";
+import "./App.css";
 
-const CATEGORY_GROUPS = {
-  'Income':         { color:'#22c55e', cats:['SR Paycheck','Car Reimbursement','NR DS Paycheck','Canada Child Benefit','Other Income'] },
-  'Home':           { color:'#f97316', cats:['Rent'] },
-  'Transportation': { color:'#f97316', cats:['Vehicle Loan','Auto Insurance','Auto Maintenance','Parking','Rideshare'] },
-  'Family':         { color:'#f97316', cats:['Gurshaan School Fees','Gurnadar Daycare','Baby Supplies'] },
-  'Debt & Banking': { color:'#f97316', cats:['Student Loan','Bank Fees','Accountant Fee'] },
-  'CC Payments':    { color:'#94a3b8', cats:['Scotia CC Payment','CIBC CC Payment'] },
-  'Food & Dining':  { color:'#eab308', cats:['Groceries','Dining & Takeout','Coffee & Snacks'] },
-  'Shopping':       { color:'#eab308', cats:['Shopping','Clothing'] },
-  'Health':         { color:'#ec4899', cats:['Pharmacy & Medical','Wellness & Beauty'] },
-  'Lifestyle':      { color:'#eab308', cats:['Entertainment','Mobile Bill','Charity / Donation'] },
-  'Digital':        { color:'#a855f7', cats:['Subscriptions'] },
-  'Family Support': { color:'#a855f7', cats:['Remitly'] },
-  'Savings':        { color:'#3b82f6', cats:['SR FHSA','SR TFSA','NR FHSA','NR RRSP','Gurshaan RESP','Gurnadar RESP'] },
-  'Transfers':      { color:'#64748b', cats:['Transfer — Exclude'] },
-}
-
-const INCOME_CATS    = CATEGORY_GROUPS['Income'].cats
-const SAVINGS_CATS   = CATEGORY_GROUPS['Savings'].cats
-const CC_PAY_CATS    = CATEGORY_GROUPS['CC Payments'].cats
-const EXCLUDE_CATS   = CATEGORY_GROUPS['Transfers'].cats
-const FIXED_GROUPS   = ['Home','Transportation','Family','Debt & Banking','Family Support']
-const FIXED_CATS     = FIXED_GROUPS.flatMap(g => CATEGORY_GROUPS[g].cats)
-const CC_SPEND_GROUPS= ['Food & Dining','Shopping','Health','Lifestyle','Digital']
-const HH_GROUPS      = ['Income','Home','Transportation','Family','Debt & Banking','CC Payments','Family Support','Savings']
-
-const DEFAULT_BUDGET = {
-  'SR Paycheck':8000,'Car Reimbursement':250,'NR DS Paycheck':6700,'Canada Child Benefit':300,
-  'Rent':3500,
-  'Vehicle Loan':644,'Auto Insurance':290,'Auto Maintenance':100,'Parking':50,'Rideshare':50,
-  'Gurshaan School Fees':400,'Gurnadar Daycare':850,'Baby Supplies':100,
-  'Student Loan':153,'Bank Fees':35,'Accountant Fee':0,
-  'Groceries':1000,'Dining & Takeout':400,'Coffee & Snacks':100,
-  'Shopping':400,'Clothing':200,
-  'Pharmacy & Medical':100,'Wellness & Beauty':150,
-  'Entertainment':100,'Mobile Bill':100,'Charity / Donation':100,
-  'Subscriptions':50,'Remitly':200,
-  'SR FHSA':650,'SR TFSA':500,'NR FHSA':0,'NR RRSP':0,'Gurshaan RESP':300,'Gurnadar RESP':220,
-}
+// ─── ACCOUNTS ────────────────────────────────────────────────────────────────
 
 const ACCOUNTS = [
-  {id:'SR_BANK',    label:'SR — Scotia Bank'},
-  {id:'NR_BANK',    label:'NR — Scotia Bank'},
-  {id:'SR_CC',      label:'SR — Scotia Momentum Visa'},
-  {id:'SR_CIBC',    label:'SR — CIBC (Costco)'},
-  {id:'WEALTHSIMPLE',label:'Wealthsimple Holdings'},
-]
+  { id: "sr_scotia_bank",  label: "SR Scotia Bank",                      type: "bank" },
+  { id: "nr_scotia_bank",  label: "NR Scotia Bank",                      type: "bank" },
+  { id: "sr_scotia_visa",  label: "SR Scotia Momentum Infinite Visa",    type: "cc"   },
+  { id: "sr_cibc_mc",      label: "SR CIBC Costco Mastercard",           type: "cc"   },
+  { id: "sr_tangerine",    label: "SR Tangerine",                        type: "cc"   },
+];
 
-const fmt  = n => '$'+Math.abs(n||0).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2})
-const fmtK = n => Math.abs(n||0)>=1000?'$'+(Math.abs(n||0)/1000).toFixed(1)+'k':fmt(n)
+const INVEST_ACCOUNTS = [
+  { id: "sr_fhsa",         label: "SR FHSA"           },
+  { id: "sr_tfsa",         label: "SR TFSA"           },
+  { id: "resp_gurshaan",   label: "RESP — Gurshaan"   },
+  { id: "resp_gurnadar",   label: "RESP — Gurnadar"   },
+  { id: "nr_fhsa",         label: "NR FHSA"           },
+  { id: "nr_rrsp",         label: "NR RRSP"           },
+];
 
-function getPeriodProgress(month){
-  const now=new Date(), [y,m]=month.split('-').map(Number)
-  const dim=new Date(y,m,0).getDate()
-  if(now.getFullYear()===y&&now.getMonth()+1===m) return Math.round((now.getDate()/dim)*100)
-  return new Date(y,m-1,1)<new Date(now.getFullYear(),now.getMonth(),1)?100:0
-}
+// ─── DEFAULT CATEGORIES ──────────────────────────────────────────────────────
 
-function categorize(merchant,type,account,amount){
-  const m=merchant.toLowerCase()
-  const isCredit=type==='credit', isSR=account==='SR_BANK', isNR=account==='NR_BANK', isBank=isSR||isNR
-  const has=(...kw)=>kw.some(k=>m.includes(k))
-  if(isBank&&isCredit){
-    if(has('mb-dep','mb dep')){return isNR?'NR DS Paycheck':amount<=300?'Car Reimbursement':'SR Paycheck'}
-    if(has('ccb','canada child','fed grant','federal grant')) return 'Canada Child Benefit'
-    if(has('interac','e-transfer','etransfer')) return null
-    return 'Other Income'
-  }
-  if(isBank&&!isCredit){
-    if(has('savreentoor','savreet toor','savreet')) return 'Rent'
-    if(has('rbc loan','rbc mort')) return 'Vehicle Loan'
-    if(has('insurance corporation','icbc #')) return 'Auto Insurance'
-    if(has('monthly fees','service charge','bank fee')) return 'Bank Fees'
-    if(has('student loan','nslsc')) return 'Student Loan'
-    if(has('crd. card bill','crd card bill','scotiabank transit')) return 'Scotia CC Payment'
-    if(has('cibc card','cibc card products')) return 'CIBC CC Payment'
-    if(has('fhsa')) return isSR?'SR FHSA':'NR FHSA'
-    if(has('rrsp')) return isNR?'NR RRSP':null
-    if(has('tfsa')) return isSR?'SR TFSA':null
-    if(has('resp')) return 'Gurshaan RESP'
-    if(has('remitly')) return 'Remitly'
-    if(has('gurdwara','guru nanak')) return 'Charity / Donation'
-    if(has('interac','e-transfer','abm withdrawal','etransfer')) return null
-    return null
-  }
-  if(has('costco','superstore','save-on','walmart','freshco','no frills','loblaws','food basics','fruiticana','sabzi mandi','instacart','punjab flour')) return 'Groceries'
-  if(has('uber eat','doordash','skip the dishes','subway','a&w','burgrill','pizza','restaurant','kfc','mcdonald','burger king','popeyes','tandoor','dhaba','manohar')) return 'Dining & Takeout'
-  if(has('tim horton','starbucks','cafe','coffee','7-eleven','donut','bakery')) return 'Coffee & Snacks'
-  if(has("h&m",'zara','gap ','old navy','la vie en rose','uniqlo','sport chek','sportchek','myntra')) return 'Clothing'
-  if(has('amazon','winners','ikea','home depot','canadian tire','dollarama','marshalls','homesense')) return 'Shopping'
-  if(has('shoppers drug mart','pharmacy','rexall','london drugs','medical','clinic','dental','hospital')) return 'Pharmacy & Medical'
-  if(has('massage','spa','salon','beautician','facial','barber','fade factory','revere','beauty supply')) return 'Wellness & Beauty'
-  if(has('abby tires','akal','auto repair','tire','oil change','car wash','midas','meineke')) return 'Auto Maintenance'
-  if(has('impark','parking','easypark','prkg')) return 'Parking'
-  if(m.includes('uber')&&!m.includes('eat')) return 'Rideshare'
-  if(has('koodo','fido','telus','rogers','bell ','chatr','freedom mobile','virgin plus','public mobile')) return 'Mobile Bill'
-  if(has('netflix','spotify','disney','apple.com','apple bill','icloud','chatgpt','google one','microsoft','adobe')) return 'Subscriptions'
-  if(has('cinema','movie','theatre','recreation','library','newton')) return 'Entertainment'
-  if(has('gurdwara','guru nanak','charity','donation')) return 'Charity / Donation'
-  return 'Uncategorized'
-}
+const DEFAULT_CATEGORIES = {
+  income: [
+    {
+      head: "Simranvir Rathore",
+      subs: ["SR Salary", "Car Reimbursement", "Other Income"],
+      budget: { "SR Salary": 8000, "Car Reimbursement": 250, "Other Income": 0 },
+    },
+    {
+      head: "Navneet Rathore",
+      subs: ["NR DS Paycheck", "Canada Child Benefit", "Other Income"],
+      budget: { "NR DS Paycheck": 6700, "Canada Child Benefit": 967, "Other Income": 0 },
+    },
+  ],
+  expenses: [
+    { head: "Home",           subs: ["Rent", "Utilities"],                                                                                  budget: { Rent: 3000, Utilities: 0 } },
+    { head: "Transportation", subs: ["Tesla Loan", "Tesla ICBC", "Van ICBC", "Gas", "Tesla App"],                                          budget: { "Tesla Loan": 644, "Tesla ICBC": 289, "Van ICBC": 180, Gas: 250, "Tesla App": 16 } },
+    { head: "Family",         subs: ["Gurshaan School Fees", "Gurnadar Daycare", "Baby Supplies", "Kids Activities"],                      budget: { "Gurshaan School Fees": 450, "Gurnadar Daycare": 850, "Baby Supplies": 100, "Kids Activities": 50 } },
+    { head: "Debt & Banking", subs: ["Student Loan", "Bank Fees"],                                                                         budget: { "Student Loan": 153, "Bank Fees": 17 } },
+    { head: "Food & Dining",  subs: ["Groceries", "Dining Out"],                                                                           budget: { Groceries: 1150, "Dining Out": 300 } },
+    { head: "Health",         subs: ["Pharmacy & Medical", "Wellness & Beauty", "YMCA"],                                                   budget: { "Pharmacy & Medical": 100, "Wellness & Beauty": 60, YMCA: 54 } },
+    { head: "Shopping",       subs: ["Amazon Purchases", "Clothing", "Household / Dollarama"],                                             budget: { "Amazon Purchases": 150, Clothing: 150, "Household / Dollarama": 150 } },
+    { head: "Digital",        subs: ["Fido Mobile", "Telus Internet", "Apple / iCloud", "ChatGPT", "Amazon Prime", "Netflix", "Gmail"],    budget: { "Fido Mobile": 104, "Telus Internet": 65, "Apple / iCloud": 35, ChatGPT: 25, "Amazon Prime": 10, Netflix: 9, Gmail: 2 } },
+    { head: "Charity",        subs: ["Charity / Donations"],                                                                               budget: { "Charity / Donations": 50 } },
+    { head: "Custom / Misc",  subs: ["Miscellaneous"],                                                                                     budget: { Miscellaneous: 60 } },
+  ],
+  savings: [
+    { head: "SR FHSA",        budget: 650 },
+    { head: "SR TFSA",        budget: 500 },
+    { head: "NR FHSA",        budget: 0   },
+    { head: "NR RRSP",        budget: 0   },
+    { head: "Gurshaan RESP",  budget: 300 },
+    { head: "Gurnadar RESP",  budget: 220 },
+  ],
+};
 
-function parseCSVLine(line){
-  const parts=[]; let cur='', inQ=false
-  for(const ch of line){
-    if(ch==='"') inQ=!inQ
-    else if(ch===','&&!inQ){parts.push(cur.trim());cur=''}
-    else cur+=ch
-  }
-  parts.push(cur.trim())
-  return parts.map(p=>p.replace(/"/g,'').trim())
-}
+// ─── AUTO-CATEGORIZATION ─────────────────────────────────────────────────────
 
-function parseScotiaBankCSV(text,accountId){
-  const lines=text.trim().split('\n'), header=lines[0].toLowerCase()
-  const isBankFile=header.includes('balance')&&!header.includes('status')
-  const isCCFile=header.includes('status')&&!header.includes('balance')
-  if(!isBankFile&&!isCCFile) return {transactions:[],month:null,corrected:false,finalAccount:accountId}
-  let finalAccount=accountId
-  if(isBankFile&&accountId!=='SR_BANK'&&accountId!=='NR_BANK') finalAccount='SR_BANK'
-  if(isCCFile&&(accountId==='SR_BANK'||accountId==='NR_BANK')) finalAccount='SR_CC'
-  const corrected=finalAccount!==accountId, txns=[]
-  let month=null
-  for(let i=1;i<lines.length;i++){
-    if(!lines[i].trim()) continue
-    const p=parseCSVLine(lines[i])
-    if(isBankFile&&p.length>=6){
-      const date=p[1]; if(!date.match(/^\d{4}-\d{2}-\d{2}$/)) continue
-      const type=p[4].toLowerCase()==='credit'?'credit':'debit'
-      const amount=Math.abs(parseFloat(p[5])||0); if(amount===0) continue
-      if(!month) month=date.slice(0,7)
-      const merchant=(p[3]&&p[3].trim())?p[3].trim():p[2].trim()
-      const cat=categorize(merchant,type,finalAccount,amount)
-      txns.push({id:Date.now()+Math.random(),date,merchant,amount,type,category:cat,account:finalAccount,month:date.slice(0,7),needsLabel:!cat,remark:null,customLabel:null})
+const AUTO_RULES = [
+  { match: /gobind.marg|gobind marg/i,                         main: "Family",             sub: "Gurshaan School Fees",   section: "expenses" },
+  { match: /slc.pad|slc student|student loan canada/i,         main: "Debt & Banking",     sub: "Student Loan",           section: "expenses" },
+  { match: /rbc.loan|rbc.*auto/i,                              main: "Transportation",     sub: "Tesla Loan",             section: "expenses" },
+  { match: /savreentoor/i,                                     main: "Home",               sub: "Rent",                   section: "expenses" },
+  { match: /canada.*child|ccb.*benefit/i,                      main: "Navneet Rathore",    sub: "Canada Child Benefit",   section: "income"   },
+  { match: /pacific.blue.cross/i,                              main: "Navneet Rathore",    sub: "Other Income",           section: "income"   },
+  { match: /fido/i,                                            main: "Digital",            sub: "Fido Mobile",            section: "expenses" },
+  { match: /telus/i,                                           main: "Digital",            sub: "Telus Internet",         section: "expenses" },
+  { match: /apple\.com|icloud/i,                               main: "Digital",            sub: "Apple / iCloud",         section: "expenses" },
+  { match: /chatgpt|openai/i,                                  main: "Digital",            sub: "ChatGPT",                section: "expenses" },
+  { match: /amazon prime|amznprime/i,                          main: "Digital",            sub: "Amazon Prime",           section: "expenses" },
+  { match: /netflix/i,                                         main: "Digital",            sub: "Netflix",                section: "expenses" },
+  { match: /google.*storage|gmail.*storage/i,                  main: "Digital",            sub: "Gmail",                  section: "expenses" },
+  { match: /ymca/i,                                            main: "Health",             sub: "YMCA",                   section: "expenses" },
+  { match: /shoppers|pharma|drug mart/i,                       main: "Health",             sub: "Pharmacy & Medical",     section: "expenses" },
+  { match: /costco.gas|gas.stn|gas.station/i,                  main: "Transportation",     sub: "Gas",                    section: "expenses" },
+  { match: /remitly/i,                                         main: "Custom / Misc",      sub: "Miscellaneous",          section: "expenses" },
+  { match: /daycare|ecds|child.care/i,                         main: "Family",             sub: "Gurnadar Daycare",       section: "expenses" },
+  { match: /amazon(?!.prime)/i,                                main: "Shopping",           sub: "Amazon Purchases",       section: "expenses" },
+  { match: /dollarama/i,                                       main: "Shopping",           sub: "Household / Dollarama",  section: "expenses" },
+  { match: /crd\.card|credit.card.pay|card.payment|card bill/i,main: "TRANSFER",           sub: "CC Payment",             section: "transfer" },
+  { match: /scotiabank.*transit|interac.*e-trans|abm.*interac/i,main: "TRANSFER",          sub: "Transfer — Exclude",     section: "transfer" },
+  { match: /cibc.*card|card.*cibc/i,                           main: "TRANSFER",           sub: "CC Payment",             section: "transfer" },
+  { match: /delta.sd|delta school dist/i,                      main: "Navneet Rathore",    sub: "NR DS Paycheck",         section: "income"   },
+];
+
+function autoCategorize(description, amount, accountId) {
+  const desc = (description || "").toLowerCase();
+
+  // MB-DEP (direct deposit) rules
+  if (/mb-dep|mb dep/.test(desc)) {
+    if (accountId === "sr_scotia_bank") {
+      return Math.abs(amount) > 300
+        ? { main: "Simranvir Rathore", sub: "SR Salary",         section: "income" }
+        : { main: "Simranvir Rathore", sub: "Car Reimbursement", section: "income" };
     }
-    if(isCCFile&&p.length>=7){
-      const date=p[1]; if(!date.match(/^\d{4}-\d{2}-\d{2}$/)) continue
-      const merchant=p[2].trim()
-      const type=p[5].toLowerCase()==='credit'?'credit':'debit'
-      const amount=Math.abs(parseFloat(p[6])||0); if(amount===0||!merchant) continue
-      if(!month) month=date.slice(0,7)
-      const cat=categorize(merchant,type,finalAccount,amount)
-      txns.push({id:Date.now()+Math.random(),date,merchant,amount,type,category:cat,account:finalAccount,month:date.slice(0,7),needsLabel:false,remark:null,customLabel:null})
+    if (accountId === "nr_scotia_bank") {
+      return { main: "Navneet Rathore", sub: "NR DS Paycheck", section: "income" };
     }
   }
-  return {transactions:txns,month,corrected,finalAccount}
-}
 
-function parseWealthsimpleCSV(text){
-  const lines=text.trim().split('\n'), p2={FHSA:0,RRSP:0,TFSA:0,'Non-Registered':0}
-  for(let i=1;i<lines.length;i++){
-    const p=parseCSVLine(lines[i]); if(p.length<19||!p[0]) continue
-    const val=parseFloat(p[17])||0, valCAD=p[18]==='USD'?val*1.38:val
-    if(p[0]==='FHSA') p2.FHSA+=valCAD
-    else if(p[0]==='RRSP') p2.RRSP+=valCAD
-    else if(p[0]==='TFSA') p2.TFSA+=valCAD
-    else if(p[0]==='Non-registered') p2['Non-Registered']+=valCAD
+  // ICBC — distinguish by amount
+  if (/icbc|insurance corporation/i.test(desc)) {
+    const abs = Math.abs(amount);
+    return abs >= 200
+      ? { main: "Transportation", sub: "Tesla ICBC", section: "expenses" }
+      : { main: "Transportation", sub: "Van ICBC",   section: "expenses" };
   }
-  return p2
+
+  // Tesla App (small CC charge)
+  if (/tesla/i.test(desc) && Math.abs(amount) < 50) {
+    return { main: "Transportation", sub: "Tesla App", section: "expenses" };
+  }
+
+  // Run general rules
+  for (const rule of AUTO_RULES) {
+    if (rule.match.test(desc)) {
+      return { main: rule.main, sub: rule.sub, section: rule.section };
+    }
+  }
+
+  return null;
 }
-const Bar=({actual,budget:b,color='#3b82f6',height=6})=>{
-  const pct=b>0?Math.min((actual/b)*100,100):0, over=b>0&&actual>b
-  return <div style={{width:'100%',height,background:'#1e293b',borderRadius:height/2,overflow:'hidden'}}><div style={{height:'100%',width:pct+'%',background:over?'#ef4444':color,borderRadius:height/2,transition:'width 0.3s'}}/></div>
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+function fmt(n) {
+  if (n === null || n === undefined) return "—";
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency", currency: "CAD",
+    minimumFractionDigits: 0, maximumFractionDigits: 0,
+  }).format(Math.abs(n));
 }
 
-export default function App(){
-  const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')??d}catch{return d}}
-  const [transactions,setTransactions]=useState(()=>load('rh_tx',[]))
-  const [budget,setBudget]=useState(()=>load('rh_budget',DEFAULT_BUDGET))
-  const [openingBal,setOpeningBal]=useState(()=>load('rh_ob',{}))
-  const [investments,setInvestments]=useState(()=>load('rh_invest',null))
-  const [selectedMonth,setSelectedMonth]=useState(()=>new Date().toISOString().slice(0,7))
-  const [activeTab,setActiveTab]=useState('dashboard')
-  const [showUpload,setShowUpload]=useState(false)
-  const [showBudget,setShowBudget]=useState(false)
-  const [uploadAccount,setUploadAccount]=useState('SR_BANK')
-  const [labelQueue,setLabelQueue]=useState([])
-  const [notification,setNotification]=useState(null)
-  const [bulkPrompt,setBulkPrompt]=useState(null)
-  const [labelSel,setLabelSel]=useState({})
-  const [labelCust,setLabelCust]=useState({})
-  const [labelRmk,setLabelRmk]=useState({})
+function fmtFull(n) {
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency", currency: "CAD",
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(n);
+}
 
-  useEffect(()=>localStorage.setItem('rh_tx',JSON.stringify(transactions)),[transactions])
-  useEffect(()=>localStorage.setItem('rh_budget',JSON.stringify(budget)),[budget])
-  useEffect(()=>localStorage.setItem('rh_ob',JSON.stringify(openingBal)),[openingBal])
-  useEffect(()=>localStorage.setItem('rh_invest',JSON.stringify(investments)),[investments])
+function toMonthKey(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + (dateStr.length === 10 ? "T00:00:00" : ""));
+  if (isNaN(d)) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
 
-  const notify=(msg,type='success')=>{setNotification({msg,type});setTimeout(()=>setNotification(null),4500)}
+function monthLabel(key) {
+  if (!key) return "";
+  const [y, m] = key.split("-");
+  return new Date(parseInt(y), parseInt(m) - 1, 1)
+    .toLocaleDateString("en-CA", { month: "long", year: "numeric" });
+}
 
-  const handleUpload=e=>{
-    const file=e.target.files[0]; if(!file) return
-    const reader=new FileReader()
-    reader.onload=ev=>{
-      const text=ev.target.result
-      if(uploadAccount==='WEALTHSIMPLE'){
-        const p=parseWealthsimpleCSV(text), total=Object.values(p).reduce((s,v)=>s+v,0)
-        if(total>0){setInvestments({...p,lastUpdated:new Date().toLocaleDateString('en-CA')});notify('Wealthsimple updated — '+fmtK(total))}
-        else notify('Could not read Wealthsimple file','error')
-      } else {
-        const {transactions:parsed,month,corrected,finalAccount}=parseScotiaBankCSV(text,uploadAccount)
-        if(!parsed.length) notify('No transactions found — check file format','error')
-        else {
-          setTransactions(prev=>[...prev.filter(t=>!(t.account===finalAccount&&t.month===month)),...parsed])
-          const ul=parsed.filter(t=>t.needsLabel)
-          if(ul.length) setLabelQueue(prev=>[...prev,...ul])
-          // auto-detect internal transfers: same amount, same day, opposite accounts
-          notify(corrected?`Auto-corrected to ${finalAccount} — ${parsed.length} tx for ${month}`:`Imported ${parsed.length} transactions for ${month}`)
-          setSelectedMonth(month)
-        }
+function shortDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString("en-CA", { month: "short", day: "numeric" });
+}
+
+function getActualColor(actual, budget, type) {
+  if (!actual || actual === 0) return "neutral";
+  if (!budget || budget === 0) return actual > 0 ? "neutral" : "neutral";
+  const r = actual / budget;
+  if (type === "expense") {
+    if (r <= 1.0) return "green";
+    if (r <= 1.2) return "amber";
+    return "red";
+  }
+  // income or savings — more is better
+  if (r >= 1.0) return "green";
+  if (r >= 0.8) return "amber";
+  return "red";
+}
+
+function colorCls(color) {
+  return { green: "c-green", amber: "c-amber", red: "c-red", neutral: "c-muted" }[color] || "c-muted";
+}
+
+function accountLabel(id) {
+  return ACCOUNTS.find(a => a.id === id)?.label || id;
+}
+
+// ─── CSV PARSING ─────────────────────────────────────────────────────────────
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = "", inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === "," && !inQ) { result.push(cur); cur = ""; }
+    else { cur += ch; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseCSV(text, accountId) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  const header = lines[0].split(",").map(h => h.replace(/"/g, "").trim().toLowerCase());
+
+  const idx = (terms) => header.findIndex(h => terms.some(t => h.includes(t)));
+
+  const dateIdx   = idx(["date"]);
+  const descIdx   = idx(["description", "narrative", "merchant", "name", "payee"]);
+  const amtIdx    = idx(["amount", "transaction amount"]);
+  const debitIdx  = idx(["debit", "withdrawal"]);
+  const creditIdx = idx(["credit", "deposit"]);
+
+  const results = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseCSVLine(lines[i]);
+    if (cells.length < 2) continue;
+
+    const rawDate = (cells[dateIdx >= 0 ? dateIdx : 0] || "").replace(/"/g, "").trim();
+    const desc    = (cells[descIdx >= 0 ? descIdx : 1] || "").replace(/"/g, "").trim();
+    let amount    = 0;
+
+    if (debitIdx >= 0 && creditIdx >= 0) {
+      const deb = parseFloat((cells[debitIdx]  || "").replace(/[",\s]/g, "")) || 0;
+      const crd = parseFloat((cells[creditIdx] || "").replace(/[",\s]/g, "")) || 0;
+      amount = crd - deb;
+    } else {
+      amount = parseFloat((cells[amtIdx >= 0 ? amtIdx : 2] || "").replace(/[",\s]/g, "")) || 0;
+    }
+
+    if (!rawDate || !desc) continue;
+
+    // Parse date flexibly
+    let d = new Date(rawDate);
+    if (isNaN(d)) {
+      const parts = rawDate.split(/[\/\-\.]/);
+      if (parts.length === 3) {
+        // Try MM/DD/YYYY and DD/MM/YYYY
+        d = new Date(`${parts[2]}-${parts[0].padStart(2,"0")}-${parts[1].padStart(2,"0")}`);
+        if (isNaN(d)) d = new Date(`${parts[2]}-${parts[1].padStart(2,"0")}-${parts[0].padStart(2,"0")}`);
       }
-      e.target.value=''; setShowUpload(false)
     }
-    reader.readAsText(file)
+    if (isNaN(d)) continue;
+
+    const dateStr  = d.toISOString().split("T")[0];
+    const monthKey = toMonthKey(dateStr);
+    const cat      = autoCategorize(desc, amount, accountId);
+
+    results.push({
+      id:            `${Date.now()}-${i}-${Math.random().toString(36).slice(2,7)}`,
+      date:          dateStr,
+      month:         monthKey,
+      account:       accountId,
+      description:   desc,
+      amount:        amount,
+      mainCategory:  cat?.main  || "",
+      subCategory:   cat?.sub   || "",
+      section:       cat?.section || (amount >= 0 ? "income" : "expenses"),
+      remarks:       "",
+      isTransfer:    cat?.section === "transfer",
+      autoDetected:  !!cat,
+    });
   }
 
-  const updateCat=(id,cat,remark=null,customLabel=null)=>{
-    setTransactions(prev=>{
-      const tx=prev.find(t=>t.id===id)
-      const updated=prev.map(t=>t.id===id?{...t,category:cat,needsLabel:false,remark,customLabel}:t)
-      if(tx&&cat&&!EXCLUDE_CATS.includes(cat)&&cat!=='Custom / Misc'){
-        const similar=updated.filter(t=>t.id!==id&&t.merchant===tx.merchant&&(t.needsLabel||t.category==='Uncategorized'||!t.category))
-        if(similar.length>0) setBulkPrompt({merchant:tx.merchant,category:cat,ids:similar.map(t=>t.id),count:similar.length})
+  return results;
+}
+
+function parseInvestmentCSV(text, accountId) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const header = lines[0].split(",").map(h => h.replace(/"/g, "").trim().toLowerCase());
+
+  const idx = (terms) => header.findIndex(h => terms.some(t => h.includes(t)));
+  const symIdx  = idx(["symbol", "ticker"]);
+  const nameIdx = idx(["name", "description", "security", "holding"]);
+  const qtyIdx  = idx(["qty", "quantity", "shares", "units"]);
+  const bookIdx = idx(["book", "cost", "acb"]);
+  const mktIdx  = idx(["market", "value", "current"]);
+
+  return lines.slice(1).map((line, i) => {
+    const cells = parseCSVLine(line);
+    const qty   = parseFloat((cells[qtyIdx]  || "").replace(/[",]/g, "")) || 0;
+    const book  = parseFloat((cells[bookIdx] || "").replace(/[",]/g, "")) || 0;
+    const mkt   = parseFloat((cells[mktIdx]  || "").replace(/[",]/g, "")) || 0;
+    return {
+      id:          `inv-${Date.now()}-${i}`,
+      account:     accountId,
+      symbol:      (cells[symIdx]  || "").replace(/"/g, "").trim() || "—",
+      name:        (cells[nameIdx] || "").replace(/"/g, "").trim() || "—",
+      qty, bookValue: book, marketValue: mkt,
+    };
+  }).filter(r => r.qty > 0 || r.bookValue > 0 || r.marketValue > 0);
+}
+
+// ─── ROOT APP ────────────────────────────────────────────────────────────────
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const nowKey = (() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`;
+  })();
+
+  const [selectedMonth, setSelectedMonth] = useState(nowKey);
+  const [selectedYear,  setSelectedYear]  = useState(new Date().getFullYear());
+
+  const load = (key, def) => {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; }
+    catch { return def; }
+  };
+
+  const [transactions,  setTransactions]  = useState(() => load("rf_transactions", []));
+  const [categories,    setCategories]    = useState(() => load("rf_categories", null) || DEFAULT_CATEGORIES);
+  const [investments,   setInvestments]   = useState(() => load("rf_investments", []));
+  const [toast,         setToast]         = useState(null);
+
+  useEffect(() => { localStorage.setItem("rf_transactions", JSON.stringify(transactions)); }, [transactions]);
+  useEffect(() => { localStorage.setItem("rf_categories",   JSON.stringify(categories));   }, [categories]);
+  useEffect(() => { localStorage.setItem("rf_investments",  JSON.stringify(investments));  }, [investments]);
+
+  function showToast(msg, type = "info") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  function prevMonth() {
+    const [y, m] = selectedMonth.split("-").map(Number);
+    setSelectedMonth(m === 1 ? `${y-1}-12` : `${y}-${String(m-1).padStart(2,"0")}`);
+  }
+  function nextMonth() {
+    const [y, m] = selectedMonth.split("-").map(Number);
+    setSelectedMonth(m === 12 ? `${y+1}-01` : `${y}-${String(m+1).padStart(2,"0")}`);
+  }
+
+  function addTransactions(newTxs) {
+    setTransactions(prev => {
+      const existing = new Set(prev.map(t => `${t.date}|${t.description}|${t.amount}`));
+      const toAdd = newTxs.filter(t => !existing.has(`${t.date}|${t.description}|${t.amount}`));
+      showToast(`${toAdd.length} new transaction${toAdd.length !== 1 ? "s" : ""} imported${newTxs.length - toAdd.length > 0 ? ` (${newTxs.length - toAdd.length} duplicates skipped)` : ""}`);
+      return [...prev, ...toAdd];
+    });
+  }
+
+  function updateTransaction(id, updates) {
+    setTransactions(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      const updated = { ...t, ...updates };
+      // Keep month in sync with date
+      if (updates.date) updated.month = toMonthKey(updates.date);
+      return updated;
+    }));
+  }
+
+  function deleteTransaction(id) {
+    setTransactions(prev => prev.filter(t => t.id !== id));
+  }
+
+  function clearMonth(key) {
+    setTransactions(prev => prev.filter(t => t.month !== key));
+    showToast(`Cleared all data for ${monthLabel(key)}`);
+  }
+
+  function bulkReCategorize(description, main, sub, section) {
+    const lower = description.toLowerCase();
+    let count = 0;
+    setTransactions(prev => prev.map(t => {
+      if (t.description.toLowerCase() === lower && (t.mainCategory !== main || t.subCategory !== sub)) {
+        count++;
+        return { ...t, mainCategory: main, subCategory: sub, section, isTransfer: section === "transfer" };
       }
-      return updated
-    })
-    setLabelQueue(prev=>prev.filter(t=>t.id!==id))
+      return t;
+    }));
+    showToast(`Applied to ${count} similar transaction${count !== 1 ? "s" : ""}`);
   }
 
-  const applyBulk=()=>{
-    if(!bulkPrompt) return
-    setTransactions(prev=>prev.map(t=>bulkPrompt.ids.includes(t.id)?{...t,category:bulkPrompt.category,needsLabel:false}:t))
-    setLabelQueue(prev=>prev.filter(t=>!bulkPrompt.ids.includes(t.id)))
-    notify(`Applied "${bulkPrompt.category}" to ${bulkPrompt.count} similar transactions`)
-    setBulkPrompt(null)
-  }
+  const uncategorizedCount = transactions
+    .filter(t => t.month === selectedMonth && !t.mainCategory && !t.isTransfer).length;
 
-  const recategorizeAll=()=>{
-    setTransactions(prev=>prev.map(t=>{
-      if(EXCLUDE_CATS.includes(t.category)||t.customLabel) return t
-      const cat=categorize(t.merchant,t.type,t.account,t.amount)
-      return {...t,category:cat||t.category,needsLabel:!cat&&!t.category}
-    }))
-    notify('Re-categorized all transactions')
-  }
-
-  const getTx=(mo,ac=null)=>transactions.filter(t=>t.month===mo&&(ac===null||t.account===ac)&&!EXCLUDE_CATS.includes(t.category))
-  const getAllTx=(mo,ac=null)=>transactions.filter(t=>t.month===mo&&(ac===null||t.account===ac))
-  const sumOf=(list,cats,type=null)=>list.filter(t=>cats.includes(t.category)&&(type===null||t.type===type)).reduce((s,t)=>s+t.amount,0)
-  const getOB=(ac,mo)=>openingBal[ac+'_'+mo]||0
-  const setOBVal=(ac,mo,v)=>setOpeningBal(p=>({...p,[ac+'_'+mo]:parseFloat(v)||0}))
-  const getClose=(ac,mo)=>{
-    const list=getAllTx(mo,ac)
-    return getOB(ac,mo)+list.filter(t=>t.type==='credit').reduce((s,t)=>s+t.amount,0)-list.filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0)
-  }
-  const catColor=cat=>Object.values(CATEGORY_GROUPS).find(g=>g.cats.includes(cat))?.color||'#64748b'
-
-  const moOpts=[...new Set(transactions.map(t=>t.month))].sort()
-  const moList=moOpts.length?moOpts:[selectedMonth]
-  const moLabel=m=>new Date(m+'-15').toLocaleString('en-CA',{month:'long',year:'numeric'})
-
-  const srBk=getTx(selectedMonth,'SR_BANK'), nrBk=getTx(selectedMonth,'NR_BANK')
-  const srCc=getTx(selectedMonth,'SR_CC'),   cibc=getTx(selectedMonth,'SR_CIBC')
-  const allBk=[...srBk,...nrBk], allCc=[...srCc,...cibc]
-
-  const totalIncome  =sumOf(allBk,INCOME_CATS,'credit')
-  const totalFixed   =sumOf(allBk,FIXED_CATS,'debit')
-  const totalSavings =sumOf(allBk,SAVINGS_CATS,'debit')
-  const totalCcPay   =sumOf(allBk,CC_PAY_CATS,'debit')
-  const totalCcSpend =allCc.filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0)
-  const unallocated  =totalIncome-totalFixed-totalCcPay-totalSavings
-  const savingsRate  =totalIncome>0?(totalSavings/totalIncome*100).toFixed(1):0
-  const periodProg   =getPeriodProgress(selectedMonth)
-
-  const grocCC=allCc.filter(t=>t.category==='Groceries'&&t.type==='debit').reduce((s,t)=>s+t.amount,0)
-  const needsAmt=totalFixed+grocCC, wantsAmt=totalCcSpend-grocCC
-  const needsPct=totalIncome>0?Math.round(needsAmt/totalIncome*100):0
-  const wantsPct=totalIncome>0?Math.round(wantsAmt/totalIncome*100):0
-  const savPct  =totalIncome>0?Math.round(totalSavings/totalIncome*100):0
-
-  const srBal=getClose('SR_BANK',selectedMonth), nrBal=getClose('NR_BANK',selectedMonth)
-  const invTotal=investments?Object.entries(investments).filter(([k])=>k!=='lastUpdated').reduce((s,[,v])=>s+v,0):0
-  const netWorth=srBal+nrBal+invTotal
-  const bgtIncome=INCOME_CATS.reduce((s,c)=>s+(budget[c]||0),0)
-  const bgtSavings=SAVINGS_CATS.reduce((s,c)=>s+(budget[c]||0),0)
-
-  const CatSelect=({value,onChange})=>(
-    <select value={value||''} onChange={onChange} className="tx-cat-sel">
-      <option value="">— Uncategorized —</option>
-      <option value="Transfer — Exclude">Transfer — Exclude (internal)</option>
-      <option value="Custom / Misc">✏ Custom / Misc...</option>
-      <optgroup label="──────────"/>
-      {Object.entries(CATEGORY_GROUPS).filter(([g])=>g!=='Transfers').flatMap(([,{cats}])=>cats.map(c=><option key={c} value={c}>{c}</option>))}
-    </select>
-  )
-
-  const handleCatChange=(txId,newCat)=>{
-    if(newCat==='Custom / Misc'){
-      const label=window.prompt('Label for this transaction (e.g. "Birthday gift for Gurshaan"):')
-      if(label) updateCat(txId,'Custom / Misc',null,label)
-    } else updateCat(txId,newCat)
-  }
-
-  const TxRow=({t})=>(
-    <div className={`tx-row ${t.needsLabel||t.category==='Uncategorized'?'tx-unlabeled':''}`}>
-      <span className="tx-date">{t.date.slice(5)}</span>
-      <span className="tx-tag">{t.account==='SR_CIBC'?'CIBC':t.account==='SR_CC'?'Visa':t.account==='SR_BANK'?'SR':t.account==='NR_BANK'?'NR':''}</span>
-      <span className="tx-merchant">{t.customLabel||t.merchant}</span>
-      {t.remark&&<span style={{fontSize:11,color:'#475569',fontStyle:'italic',marginLeft:4}}>({t.remark})</span>}
-      <span className={`tx-amt ${t.type==='credit'?'green':'red'}`}>{t.type==='credit'?'+':'-'}{fmt(t.amount)}</span>
-      <CatSelect value={t.customLabel?'Custom / Misc':t.category} onChange={e=>handleCatChange(t.id,e.target.value)}/>
-    </div>
-  )
   return (
-    <div className="app">
-      {notification&&<div className={`notif notif-${notification.type}`}>{notification.msg}</div>}
+    <div className="app-root">
+      {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
 
-      {bulkPrompt&&(
-        <div className="overlay" onClick={()=>setBulkPrompt(null)}>
-          <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:440}}>
-            <h3>Apply to Similar Transactions?</h3>
-            <p style={{color:'#94a3b8',margin:'8px 0'}}>Found <strong style={{color:'#e2e8f0'}}>{bulkPrompt.count}</strong> other uncategorized transactions from:</p>
-            <p style={{color:'#f97316',fontWeight:700,margin:'4px 0 12px'}}>"{bulkPrompt.merchant}"</p>
-            <p style={{color:'#94a3b8',margin:'0 0 16px'}}>Apply <strong style={{color:'#22c55e'}}>"{bulkPrompt.category}"</strong> to all of them?</p>
-            <div style={{display:'flex',gap:12}}>
-              <button className="btn-primary" onClick={applyBulk}>Yes, apply to all</button>
-              <button className="btn-ghost" onClick={()=>setBulkPrompt(null)}>No, keep individual</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showUpload&&(
-        <div className="overlay" onClick={()=>setShowUpload(false)}>
-          <div className="modal" onClick={e=>e.stopPropagation()}>
-            <h3>Upload CSV File</h3>
-            <div className="field"><label>Account</label>
-              <select value={uploadAccount} onChange={e=>setUploadAccount(e.target.value)}>
-                {ACCOUNTS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
-              </select>
-            </div>
-            <div style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:6,padding:'10px 14px',margin:'8px 0',fontSize:13,color:'#64748b'}}>
-              💡 Bank vs CC is auto-detected. Account type auto-corrects if mismatched.
-            </div>
-            <div className="field"><label>CSV File</label><input type="file" accept=".csv" onChange={handleUpload}/></div>
-            <p className="hint">Re-uploading the same month replaces that account's data.</p>
-            <button className="btn-ghost" onClick={()=>setShowUpload(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-      {labelQueue.length>0&&(
-        <div className="overlay">
-          <div className="modal" style={{maxWidth:580}}>
-            <h3>Label Transactions <span style={{color:'#64748b',fontSize:14,fontWeight:400}}>({labelQueue.length} remaining)</span></h3>
-            <p className="hint">E-transfers and ATM withdrawals need your input. Use "Transfer — Exclude" for internal household transfers (e.g. SR↔NR account moves).</p>
-            {labelQueue.slice(0,5).map(t=>(
-              <div key={t.id} style={{borderBottom:'1px solid #1e293b',padding:'12px 0'}}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
-                  <div><span style={{fontSize:11,color:'#475569'}}>{t.date} · {t.account}</span><div style={{fontWeight:600,color:'#e2e8f0'}}>{t.merchant}</div></div>
-                  <span style={{fontWeight:700,fontSize:16,color:t.type==='credit'?'#22c55e':'#f87171'}}>{t.type==='credit'?'+':'-'}{fmt(t.amount)}</span>
-                </div>
-                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                  <select value={labelSel[t.id]||''} onChange={e=>{setLabelSel(p=>({...p,[t.id]:e.target.value}));setLabelCust(p=>({...p,[t.id]:''}))}} className="tx-cat-sel" style={{flex:2,minWidth:180}}>
-                    <option value="">Select category...</option>
-                    <option value="Transfer — Exclude">Transfer — Exclude (internal)</option>
-                    <option value="Custom / Misc">✏ Custom / Misc...</option>
-                    <optgroup label="──────────"/>
-                    {Object.entries(CATEGORY_GROUPS).filter(([g])=>g!=='Transfers').flatMap(([,{cats}])=>cats.map(c=><option key={c} value={c}>{c}</option>))}
-                  </select>
-                  {labelSel[t.id]==='Custom / Misc'&&<input placeholder="Label (e.g. Gurshaan hockey)" value={labelCust[t.id]||''} onChange={e=>setLabelCust(p=>({...p,[t.id]:e.target.value}))} style={{flex:2,minWidth:130}}/>}
-                  <input placeholder="Remark (optional)" value={labelRmk[t.id]||''} onChange={e=>setLabelRmk(p=>({...p,[t.id]:e.target.value}))} style={{flex:1,minWidth:100}}/>
-                  <button className="btn-sm" onClick={()=>{
-                    const sel=labelSel[t.id]; if(!sel) return
-                    const cl=sel==='Custom / Misc'?(labelCust[t.id]||null):null
-                    updateCat(t.id,cl?'Custom / Misc':sel,labelRmk[t.id]||null,cl)
-                  }}>Apply</button>
-                </div>
-              </div>
-            ))}
-            <div style={{display:'flex',gap:12,marginTop:12}}>
-              <button className="btn-secondary" onClick={()=>setLabelQueue([])}>Done for now</button>
-              {labelQueue.length>5&&<span className="hint">+{labelQueue.length-5} more visible in transaction lists</span>}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <header className="header">
-        <div className="header-brand">
-          <div className="brand-icon">R</div>
-          <div><div className="brand-name">Rathore Finances</div><div className="brand-sub">Household Dashboard · 2026</div></div>
-        </div>
-        <div className="header-controls">
-          <select className="month-picker" value={selectedMonth} onChange={e=>setSelectedMonth(e.target.value)}>
-            {moList.map(m=><option key={m} value={m}>{moLabel(m)}</option>)}
-          </select>
-          <button className="btn-primary" onClick={()=>setShowUpload(true)}>↑ Upload CSV</button>
-          <button className="btn-outline" onClick={recategorizeAll}>↻ Re-categorize</button>
-          <button className="btn-outline" onClick={()=>setShowBudget(b=>!b)}>⚙ Budget</button>
-        </div>
-      </header>
-
-      <div className="nw-strip">
+      <nav className="tab-bar">
         {[
-          {label:'SR Bank',value:srBal,empty:!getAllTx(selectedMonth,'SR_BANK').length},
-          {label:'NR Bank',value:nrBal,empty:!getAllTx(selectedMonth,'NR_BANK').length},
-          {label:'Invested',value:invTotal,empty:!investments},
-          {label:'Net Worth',value:netWorth,hl:true},
-        ].map(({label,value,empty,hl})=>(
-          <div key={label} className={`nw-chip ${hl?'nw-highlight':''}`}>
-            <span className="nw-label">{label}</span>
-            <span className={`nw-val ${hl?'nw-accent':''}`}>{(empty&&!hl)?'—':fmtK(value)}</span>
-          </div>
-        ))}
-      </div>
-
-      <nav className="tabs">
-        {[{id:'dashboard',icon:'⌂',label:'Dashboard'},{id:'household',icon:'⇄',label:'Household'},{id:'spending',icon:'◈',label:'Spending'},{id:'investments',icon:'↗',label:'Investments'},{id:'annual',icon:'≡',label:'Annual'}].map(({id,icon,label})=>(
-          <button key={id} className={`tab-btn ${activeTab===id?'tab-active':''}`} onClick={()=>setActiveTab(id)}>
-            <span className="tab-icon">{icon}</span>{label}
+          { id: "overview",     label: "Overview",     icon: "⊞" },
+          { id: "transactions", label: "Transactions",  icon: "≡" },
+          { id: "investments",  label: "Investments",   icon: "◈" },
+          { id: "annual",       label: "Annual",        icon: "▦" },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            className={`tab-btn${activeTab === tab.id ? " active" : ""}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            <span className="tab-icon">{tab.icon}</span>
+            {tab.label}
+            {tab.id === "transactions" && uncategorizedCount > 0 && (
+              <span className="tab-badge">{uncategorizedCount}</span>
+            )}
           </button>
         ))}
       </nav>
 
-      {showBudget&&(
-        <div className="budget-panel">
-          <div className="bp-header">
-            <h3>Monthly Budget Targets</h3>
-            <div><button className="btn-ghost" onClick={()=>setBudget(DEFAULT_BUDGET)}>Reset Defaults</button><button className="btn-primary" onClick={()=>setShowBudget(false)}>Save & Close</button></div>
+      <div className="tab-content">
+        {activeTab === "overview" && (
+          <OverviewTab
+            transactions={transactions}
+            categories={categories}
+            selectedMonth={selectedMonth}
+            onPrevMonth={prevMonth}
+            onNextMonth={nextMonth}
+            onGoToTransactions={() => setActiveTab("transactions")}
+          />
+        )}
+        {activeTab === "transactions" && (
+          <TransactionsTab
+            transactions={transactions}
+            categories={categories}
+            selectedMonth={selectedMonth}
+            onPrevMonth={prevMonth}
+            onNextMonth={nextMonth}
+            onAddTransactions={addTransactions}
+            onUpdateTransaction={updateTransaction}
+            onDeleteTransaction={deleteTransaction}
+            onClearMonth={clearMonth}
+            onBulkReCategorize={bulkReCategorize}
+            onCategoriesChange={setCategories}
+            showToast={showToast}
+          />
+        )}
+        {activeTab === "investments" && (
+          <InvestmentsTab
+            investments={investments}
+            onInvestmentsChange={setInvestments}
+            showToast={showToast}
+          />
+        )}
+        {activeTab === "annual" && (
+          <AnnualTab
+            transactions={transactions}
+            categories={categories}
+            selectedYear={selectedYear}
+            onPrevYear={() => setSelectedYear(y => y - 1)}
+            onNextYear={() => setSelectedYear(y => y + 1)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── OVERVIEW TAB ────────────────────────────────────────────────────────────
+
+function OverviewTab({ transactions, categories, selectedMonth, onPrevMonth, onNextMonth, onGoToTransactions }) {
+  const [expanded, setExpanded] = useState({ savings: false, transfers: false });
+
+  function toggle(key) { setExpanded(p => ({ ...p, [key]: !p[key] })); }
+
+  const [headExp, setHeadExp] = useState({});
+  function toggleHead(key) { setHeadExp(p => ({ ...p, [key]: !p[key] })); }
+
+  const allTxs     = transactions.filter(t => t.month === selectedMonth);
+  const nonTf      = allTxs.filter(t => !t.isTransfer);
+  const tfTxs      = allTxs.filter(t => t.isTransfer);
+
+  function sumActual(section, mainCat, subCat) {
+    return nonTf
+      .filter(t =>
+        t.section === section &&
+        (!mainCat || t.mainCategory === mainCat) &&
+        (!subCat  || t.subCategory  === subCat)
+      )
+      .reduce((s, t) => s + Math.abs(t.amount), 0);
+  }
+
+  // Totals
+  const totalIncomeBudget = categories.income.reduce((s, h) => s + Object.values(h.budget).reduce((a,b)=>a+b,0), 0);
+  const totalIncomeActual = sumActual("income");
+  const totalExpBudget    = categories.expenses.reduce((s, h) => s + Object.values(h.budget).reduce((a,b)=>a+b,0), 0);
+  const totalExpActual    = sumActual("expenses");
+  const totalSavBudget    = categories.savings.reduce((s, h) => s + h.budget, 0);
+  const totalSavActual    = sumActual("savings");
+  const unallocated       = totalIncomeActual - totalExpActual - totalSavActual;
+
+  // Bank rows
+  const srTxs = allTxs.filter(t => t.account === "sr_scotia_bank");
+  const nrTxs = allTxs.filter(t => t.account === "nr_scotia_bank");
+
+  return (
+    <div className="tab-pane">
+      {/* Month bar */}
+      <div className="month-bar">
+        <div className="month-nav">
+          <button className="btn-ghost" onClick={onPrevMonth}>◀</button>
+          <span className="month-label">{monthLabel(selectedMonth)}</span>
+          <button className="btn-ghost" onClick={onNextMonth}>▶</button>
+        </div>
+        <button className="btn-ghost btn-sm" onClick={onGoToTransactions}>⬆ Upload CSV</button>
+      </div>
+
+      {/* Bank accounts */}
+      <div className="card mb-3">
+        <div className="acc-col-header">
+          <span className="acc-label-col section-title">🏦 Bank Accounts</span>
+          <span className="bank-col-hdr">Opening</span>
+          <span className="bank-col-hdr">Credits</span>
+          <span className="bank-col-hdr">Debits</span>
+          <span className="bank-col-hdr">Closing</span>
+        </div>
+        <BankRow label="SR Scotia Bank" txs={srTxs} />
+        <BankRow label="NR Scotia Bank" txs={nrTxs} isLast />
+      </div>
+
+      {/* Summary tiles */}
+      <div className="tiles-row mb-3">
+        <SummaryTile
+          label="Total Income"
+          budget={totalIncomeBudget}
+          actual={totalIncomeActual}
+          type="income"
+        />
+        <SummaryTile
+          label="Total Expenses"
+          budget={totalExpBudget}
+          actual={totalExpActual}
+          type="expense"
+          showBar
+        />
+        <SummaryTile
+          label="Total Savings"
+          budget={totalSavBudget}
+          actual={totalSavActual}
+          type="savings"
+        />
+        <div className="tile">
+          <div className="tile-label">Unallocated</div>
+          <div className={`tile-value ${unallocated >= 0 ? "c-green" : "c-red"}`}>
+            {unallocated < 0 ? "−" : ""}{fmt(Math.abs(unallocated))}
           </div>
-          <div className="bp-grid">
-            {Object.entries(DEFAULT_BUDGET).map(([cat])=>(
-              <div key={cat} className="bp-item"><label style={{color:catColor(cat)}}>{cat}</label><input type="number" value={budget[cat]??0} onChange={e=>setBudget(p=>({...p,[cat]:parseFloat(e.target.value)||0}))}/></div>
-            ))}
-          </div>
+          <div className="tile-sub">Income − Expenses − Savings</div>
+        </div>
+      </div>
+
+      {/* Accordion */}
+      <div className="card acc-card">
+        {/* Column header row */}
+        <div className="acc-col-header">
+          <span className="acc-label-col">Category</span>
+          <span className="acc-num-col hdr">Budgeted</span>
+          <span className="acc-num-col hdr">Actual</span>
+        </div>
+
+        {/* ── INCOME ── */}
+        <div className="acc-section-row">
+          <span className="acc-section-icon">↑</span>
+          <span className="acc-label-col acc-section-name">Income</span>
+          <span className="acc-num-col c-muted">{fmt(totalIncomeBudget)}</span>
+          <span className={`acc-num-col ${colorCls(getActualColor(totalIncomeActual, totalIncomeBudget, "income"))}`}>
+            {totalIncomeActual > 0 ? fmt(totalIncomeActual) : "—"}
+          </span>
+        </div>
+
+        {categories.income.map(h => {
+          const hBudget = Object.values(h.budget).reduce((a,b)=>a+b,0);
+          const hActual = sumActual("income", h.head);
+          const color   = getActualColor(hActual, hBudget, "income");
+          const key     = `inc-${h.head}`;
+          return (
+            <div key={h.head}>
+              <div className="acc-head-row" onClick={() => toggleHead(key)}>
+                <span className="acc-chev">{headExp[key] ? "▾" : "▸"}</span>
+                <span className="acc-label-col">{h.head}</span>
+                <span className="acc-num-col c-muted">{fmt(hBudget)}</span>
+                <span className={`acc-num-col ${colorCls(color)}`}>{hActual > 0 ? fmt(hActual) : "—"}</span>
+              </div>
+              {headExp[key] && h.subs.map(sub => {
+                const sBudget = h.budget[sub] || 0;
+                const sActual = sumActual("income", h.head, sub);
+                return (
+                  <div key={sub} className="acc-item-row">
+                    <span className="acc-label-col acc-item-name">{sub}</span>
+                    <span className="acc-num-col c-muted">{sBudget > 0 ? fmt(sBudget) : "—"}</span>
+                    <span className={`acc-num-col ${colorCls(getActualColor(sActual, sBudget, "income"))}`}>
+                      {sActual > 0 ? fmt(sActual) : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* ── EXPENSES ── */}
+        <div className="acc-section-row">
+          <span className="acc-section-icon">↓</span>
+          <span className="acc-label-col acc-section-name">Expenses</span>
+          <span className="acc-num-col c-muted">{fmt(totalExpBudget)}</span>
+          <span className={`acc-num-col ${colorCls(getActualColor(totalExpActual, totalExpBudget, "expense"))}`}>
+            {totalExpActual > 0 ? fmt(totalExpActual) : "—"}
+          </span>
+        </div>
+
+        {categories.expenses.map(h => {
+          const hBudget = Object.values(h.budget).reduce((a,b)=>a+b,0);
+          const hActual = nonTf.filter(t => t.section === "expenses" && t.mainCategory === h.head)
+            .reduce((s,t) => s + Math.abs(t.amount), 0);
+          const color = getActualColor(hActual, hBudget, "expense");
+          const key   = `exp-${h.head}`;
+          return (
+            <div key={h.head}>
+              <div className="acc-head-row" onClick={() => toggleHead(key)}>
+                <span className="acc-chev">{headExp[key] ? "▾" : "▸"}</span>
+                <span className="acc-label-col">{h.head}</span>
+                <span className="acc-num-col c-muted">{fmt(hBudget)}</span>
+                <span className={`acc-num-col ${colorCls(color)}`}>{hActual > 0 ? fmt(hActual) : "—"}</span>
+              </div>
+              {headExp[key] && h.subs.map(sub => {
+                const sBudget = h.budget[sub] || 0;
+                const sActual = nonTf.filter(t => t.section === "expenses" && t.mainCategory === h.head && t.subCategory === sub)
+                  .reduce((s,t) => s + Math.abs(t.amount), 0);
+                return (
+                  <div key={sub} className="acc-item-row">
+                    <span className="acc-label-col acc-item-name">{sub}</span>
+                    <span className="acc-num-col c-muted">{sBudget > 0 ? fmt(sBudget) : "—"}</span>
+                    <span className={`acc-num-col ${colorCls(getActualColor(sActual, sBudget, "expense"))}`}>
+                      {sActual > 0 ? fmt(sActual) : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* ── SAVINGS ── */}
+        <div className="acc-section-row clickable" onClick={() => toggle("savings")}>
+          <span className="acc-chev">{expanded.savings ? "▾" : "▸"}</span>
+          <span className="acc-label-col acc-section-name">Savings</span>
+          <span className="acc-num-col c-muted">{fmt(totalSavBudget)}</span>
+          <span className={`acc-num-col ${colorCls(getActualColor(totalSavActual, totalSavBudget, "savings"))}`}>
+            {totalSavActual > 0 ? fmt(totalSavActual) : "—"}
+          </span>
+        </div>
+        {expanded.savings && categories.savings.map(s => {
+          const sActual = sumActual("savings", s.head);
+          return (
+            <div key={s.head} className="acc-item-row">
+              <span className="acc-label-col acc-item-name">{s.head}</span>
+              <span className="acc-num-col c-muted">{s.budget > 0 ? fmt(s.budget) : "—"}</span>
+              <span className={`acc-num-col ${colorCls(getActualColor(sActual, s.budget, "savings"))}`}>
+                {sActual > 0 ? fmt(sActual) : "—"}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* ── TRANSFERS ── */}
+        <div className="acc-section-row clickable dimmed" onClick={() => toggle("transfers")}>
+          <span className="acc-chev">{expanded.transfers ? "▾" : "▸"}</span>
+          <span className="acc-label-col acc-section-name">Transfers — excluded from calculations</span>
+          <span className="acc-num-col">—</span>
+          <span className="acc-num-col">—</span>
+        </div>
+        {expanded.transfers && (
+          tfTxs.length === 0
+            ? <div className="acc-item-row"><span className="acc-label-col acc-item-name c-muted">No transfers this month</span><span className="acc-num-col">—</span><span className="acc-num-col">—</span></div>
+            : tfTxs.map(t => (
+              <div key={t.id} className="acc-item-row">
+                <span className="acc-label-col acc-item-name">{t.description}</span>
+                <span className="acc-num-col c-muted">—</span>
+                <span className="acc-num-col c-muted">{fmt(Math.abs(t.amount))}</span>
+              </div>
+            ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BankRow({ label, txs, isLast }) {
+  const credits = txs.filter(t => t.amount > 0).reduce((s,t) => s + t.amount, 0);
+  const debits  = txs.filter(t => t.amount < 0).reduce((s,t) => s + Math.abs(t.amount), 0);
+  return (
+    <div className={`bank-row${isLast ? " last" : ""}`}>
+      <span className="acc-label-col bank-name">{label}</span>
+      <span className="bank-col c-muted">—</span>
+      <span className="bank-col c-green">+{fmt(credits)}</span>
+      <span className="bank-col c-red">−{fmt(debits)}</span>
+      <span className="bank-col" style={{ fontWeight: 500 }}>{fmt(credits - debits)}</span>
+    </div>
+  );
+}
+
+function SummaryTile({ label, budget, actual, type, showBar }) {
+  const color = getActualColor(actual, budget, type);
+  const pct   = budget > 0 ? Math.min(Math.round((actual / budget) * 100), 100) : 0;
+  return (
+    <div className="tile">
+      <div className="tile-label">{label}</div>
+      <div className={`tile-value ${colorCls(color)}`}>{fmt(actual)}</div>
+      <div className="tile-sub">Budget {fmt(budget)} · {pct}%</div>
+      {showBar && (
+        <div className="tile-bar">
+          <div className={`tile-bar-fill bar-${color}`} style={{ width: `${pct}%` }} />
         </div>
       )}
-      <main className="main">
-        {activeTab==='dashboard'&&(
-          <div className="view">
-            <h2 className="view-title">{moLabel(selectedMonth)}</h2>
-            <div className="kpi-row">
-              {[
-                {l:'Total Income',v:fmt(totalIncome),cls:'kpi-green',sub:`Budget: ${fmtK(bgtIncome)}`},
-                {l:'Fixed Expenses',v:fmt(totalFixed),cls:'kpi-red',sub:'Bank account outflows'},
-                {l:'CC Spending',v:fmt(totalCcSpend),cls:'kpi-red',sub:`${allCc.filter(t=>t.type==='debit').length} transactions`},
-                {l:'Savings',v:fmt(totalSavings),cls:'kpi-blue',sub:`Rate: ${savingsRate}%`},
-                {l:'Period Progress',v:periodProg+'%',cls:periodProg>75?'kpi-green':periodProg>40?'kpi-accent':'kpi-red',sub:moLabel(selectedMonth).split(' ')[0]+' is '+periodProg+'% complete'},
-                {l:'Unallocated',v:fmt(unallocated),cls:unallocated>=0?'kpi-green':'kpi-red',sub:'Income − Fixed − CCPay − Savings'},
-              ].map(({l,v,cls,sub})=>(
-                <div key={l} className="kpi-card"><div className="kpi-label">{l}</div><div className={`kpi-value ${cls}`}>{v}</div><div className="kpi-sub">{sub}</div></div>
-              ))}
-            </div>
+    </div>
+  );
+}
 
-            <div style={{background:'#0a0f1e',border:'1px solid #1e293b',borderRadius:10,padding:'16px 20px',marginBottom:20}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
-                <span style={{fontSize:11,fontWeight:700,letterSpacing:'0.1em',color:'#475569',textTransform:'uppercase'}}>Zero-Based Budget — Every Dollar Has a Job</span>
-                <span style={{fontSize:13,color:unallocated>=0?'#22c55e':'#ef4444',fontWeight:600}}>{unallocated>=0?fmt(unallocated)+' still unallocated':fmt(Math.abs(unallocated))+' over-allocated'}</span>
-              </div>
-              <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
-                {[
-                  {l:'Income',v:totalIncome,c:'#22c55e'},
-                  {l:'− Fixed',v:totalFixed,c:'#f97316'},
-                  {l:'− CC Pay',v:totalCcPay,c:'#94a3b8'},
-                  {l:'− Savings',v:totalSavings,c:'#3b82f6'},
-                  {l:'= Balance',v:unallocated,c:unallocated>=0?'#22c55e':'#ef4444'},
-                ].map(({l,v,c})=>(
-                  <div key={l} style={{flex:1,minWidth:100,padding:'10px 14px',background:'#0f172a',borderRadius:6,margin:2}}>
-                    <div style={{fontSize:11,color:'#475569',marginBottom:4}}>{l}</div>
-                    <div style={{fontSize:16,fontWeight:700,color:c}}>{fmt(v)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+// ─── TRANSACTIONS TAB ────────────────────────────────────────────────────────
 
-            <div className="section">
-              <div className="section-head"><h3>50 / 30 / 20 Benchmark</h3><span className="hint">Actual % of income · {periodProg}% of month elapsed</span></div>
-              {[
-                {l:'Needs (50%)',amt:needsAmt,pct:needsPct,target:50,c:'#f97316',sub:'Fixed bank expenses + Groceries'},
-                {l:'Wants (30%)',amt:wantsAmt,pct:wantsPct,target:30,c:'#eab308',sub:'CC spending excl. groceries'},
-                {l:'Savings (20%)',amt:totalSavings,pct:savPct,target:20,c:'#3b82f6',sub:'FHSA, TFSA, RESP, RRSP'},
-              ].map(({l,amt,pct,target,c,sub})=>(
-                <div key={l} style={{marginBottom:14}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}}>
-                    <div><span style={{fontSize:13,fontWeight:600,color:'#94a3b8'}}>{l}</span><span style={{fontSize:11,color:'#475569',marginLeft:8}}>{sub}</span></div>
-                    <span style={{fontSize:14,fontWeight:700,color:pct<=target?c:'#ef4444'}}>{pct}% <span style={{fontSize:12,color:'#475569',fontWeight:400}}>({fmt(amt)})</span></span>
-                  </div>
-                  <div style={{position:'relative',width:'100%',height:8,background:'#1e293b',borderRadius:4,overflow:'hidden'}}>
-                    <div style={{position:'absolute',left:target+'%',top:0,width:2,height:'100%',background:'#334155',zIndex:2}}/>
-                    <div style={{height:'100%',width:Math.min(pct,100)+'%',background:pct<=target?c:'#ef4444',borderRadius:4,transition:'width 0.3s'}}/>
-                  </div>
-                </div>
-              ))}
-            </div>
+function TransactionsTab({
+  transactions, categories, selectedMonth,
+  onPrevMonth, onNextMonth,
+  onAddTransactions, onUpdateTransaction, onDeleteTransaction,
+  onClearMonth, onBulkReCategorize, onCategoriesChange, showToast,
+}) {
+  const [uploadAccount, setUploadAccount] = useState("sr_scotia_bank");
+  const [filterAccount, setFilterAccount] = useState("");
+  const [filterSection, setFilterSection] = useState("");
+  const [search,        setSearch]        = useState("");
+  const [showCatMgr,    setShowCatMgr]    = useState(false);
+  const [clearMonthSel, setClearMonthSel] = useState("");
+  const [editingCell,   setEditingCell]   = useState(null);
+  const [bulkPrompt,    setBulkPrompt]    = useState(null);
+  const fileRef = useRef();
 
-            <div className="section">
-              <div className="section-head"><h3>Spending by Group</h3></div>
-              <table className="data-table">
-                <thead><tr><th>Group</th><th>Actual</th><th>Budget</th><th style={{width:200}}>vs Budget</th><th>Status</th></tr></thead>
-                <tbody>
-                  {Object.entries(CATEGORY_GROUPS).filter(([g])=>!['Income','Transfers'].includes(g)).map(([gName,{color,cats}])=>{
-                    const src=CC_SPEND_GROUPS.includes(gName)?allCc:allBk
-                    const actual=src.filter(t=>cats.includes(t.category)&&t.type==='debit').reduce((s,t)=>s+t.amount,0)
-                    const bgt=cats.reduce((s,c)=>s+(budget[c]||0),0)
-                    if(!actual&&!bgt) return null
-                    const pct=bgt>0?Math.round(actual/bgt*100):null, over=bgt>0&&actual>bgt
-                    return(
-                      <tr key={gName}>
-                        <td><span style={{color,fontWeight:600}}>{gName}</span></td>
-                        <td className="num">{fmt(actual)}</td>
-                        <td className="num muted">{bgt?fmt(bgt):'—'}</td>
-                        <td>{pct!==null&&<div style={{display:'flex',alignItems:'center',gap:8}}><div style={{flex:1}}><Bar actual={actual} budget={bgt} color={color}/></div><span style={{fontSize:12,color:over?'#ef4444':'#64748b',minWidth:34}}>{pct}%</span></div>}</td>
-                        <td>{over?<span className="badge-warn">Over</span>:bgt?<span className="badge-ok">OK</span>:<span className="muted">—</span>}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+  const monthTxs   = transactions.filter(t => t.month === selectedMonth);
+  const uncatCount = monthTxs.filter(t => !t.mainCategory && !t.isTransfer).length;
 
-            <div className="section">
-              <div className="section-head"><h3>Savings</h3><span style={{color:'#3b82f6',fontWeight:700}}>Rate: {savingsRate}% <span style={{color:'#475569',fontWeight:400,fontSize:12}}>/ 20% target</span></span></div>
-              <table className="data-table">
-                <thead><tr><th>Account</th><th>Contributed</th><th>Budget</th><th style={{width:160}}>Progress</th><th>Note</th></tr></thead>
-                <tbody>
-                  {SAVINGS_CATS.map(cat=>{
-                    const actual=allBk.filter(t=>t.category===cat&&t.type==='debit').reduce((s,t)=>s+t.amount,0)
-                    const bgt=budget[cat]||0; if(!actual&&!bgt) return null
-                    return(
-                      <tr key={cat}>
-                        <td style={{paddingLeft:20}}>{cat}</td>
-                        <td className="num blue">{fmt(actual)}</td>
-                        <td className="num muted">{bgt?fmt(bgt):'—'}</td>
-                        <td>{bgt?<Bar actual={actual} budget={bgt} color="#3b82f6"/>:null}</td>
-                        <td>{bgt&&actual>=bgt?<span className="badge-ok">✓</span>:bgt===0?<span style={{fontSize:11,color:'#ef4444'}}>No target set</span>:null}</td>
-                      </tr>
-                    )
-                  })}
-                  <tr className="total-row"><td>Total</td><td className="num blue">{fmt(totalSavings)}</td><td className="num muted">{fmt(bgtSavings)}</td><td><Bar actual={totalSavings} budget={bgtSavings} color="#3b82f6" height={8}/></td><td/></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+  const filtered = monthTxs
+    .filter(t => !filterAccount || t.account === filterAccount)
+    .filter(t => !filterSection || t.section === filterSection)
+    .filter(t => !search ||
+      t.description.toLowerCase().includes(search.toLowerCase()) ||
+      t.mainCategory.toLowerCase().includes(search.toLowerCase()) ||
+      (t.remarks || "").toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const allMainCats = [
+    ...categories.income.map(h   => ({ main: h.head,  section: "income"   })),
+    ...categories.expenses.map(h => ({ main: h.head,  section: "expenses" })),
+    ...categories.savings.map(h  => ({ main: h.head,  section: "savings"  })),
+    { main: "TRANSFER", section: "transfer" },
+  ];
+
+  function getSubsFor(mainCat) {
+    const ih = categories.income.find(h  => h.head === mainCat);   if (ih) return ih.subs;
+    const eh = categories.expenses.find(h => h.head === mainCat);  if (eh) return eh.subs;
+    const sh = categories.savings.find(h  => h.head === mainCat);  if (sh) return [sh.head];
+    if (mainCat === "TRANSFER") return ["CC Payment", "Transfer — Exclude"];
+    return [];
+  }
+
+  function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const txs = parseCSV(ev.target.result, uploadAccount);
+      onAddTransactions(txs);
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  }
+
+  function handleCellEdit(txId, field, value) {
+    const tx = transactions.find(t => t.id === txId);
+    if (!tx) return;
+
+    const updates = { [field]: value };
+
+    if (field === "mainCategory") {
+      const found = allMainCats.find(c => c.main === value);
+      updates.section    = found?.section || tx.section;
+      updates.isTransfer = found?.section === "transfer";
+      updates.subCategory = "";
+    }
+
+    onUpdateTransaction(txId, updates);
+
+    // Offer bulk apply when category changes
+    if (field === "mainCategory" || field === "subCategory") {
+      const newMain = field === "mainCategory" ? value : tx.mainCategory;
+      const newSub  = field === "subCategory"  ? value : tx.subCategory;
+      const found   = allMainCats.find(c => c.main === newMain);
+      const section = found?.section || tx.section;
+
+      const similar = transactions.filter(t =>
+        t.id !== txId &&
+        t.description.toLowerCase() === tx.description.toLowerCase() &&
+        (t.mainCategory !== newMain || t.subCategory !== newSub)
+      ).length;
+
+      if (similar > 0) {
+        setBulkPrompt({ description: tx.description, main: newMain, sub: newSub, section, count: similar });
+      }
+    }
+  }
+
+  function applyBulk() {
+    if (!bulkPrompt) return;
+    onBulkReCategorize(bulkPrompt.description, bulkPrompt.main, bulkPrompt.sub, bulkPrompt.section);
+    setBulkPrompt(null);
+  }
+
+  function addManual() {
+    const now = new Date();
+    onAddTransactions([{
+      id:           `manual-${Date.now()}`,
+      date:         now.toISOString().split("T")[0],
+      month:        selectedMonth,
+      account:      uploadAccount,
+      description:  "",
+      amount:       0,
+      mainCategory: "",
+      subCategory:  "",
+      section:      "expenses",
+      remarks:      "",
+      isTransfer:   false,
+      autoDetected: false,
+    }]);
+  }
+
+  const availableMonths = [...new Set(transactions.map(t => t.month))].sort().reverse();
+
+  return (
+    <div className="tab-pane">
+      {/* Bulk apply bar */}
+      {bulkPrompt && (
+        <div className="bulk-bar">
+          <span>Apply <strong>{bulkPrompt.main} / {bulkPrompt.sub}</strong> to {bulkPrompt.count} similar transaction{bulkPrompt.count !== 1 ? "s" : ""}?</span>
+          <button className="btn-ghost btn-sm" onClick={applyBulk}>Apply All</button>
+          <button className="btn-ghost btn-sm" onClick={() => setBulkPrompt(null)}>Dismiss</button>
+        </div>
+      )}
+
+      {/* Top bar */}
+      <div className="month-bar">
+        <div className="month-nav">
+          <button className="btn-ghost" onClick={onPrevMonth}>◀</button>
+          <span className="month-label">{monthLabel(selectedMonth)}</span>
+          <button className="btn-ghost" onClick={onNextMonth}>▶</button>
+        </div>
+        <div className="top-actions">
+          <select className="sel" value={uploadAccount} onChange={e => setUploadAccount(e.target.value)}>
+            {ACCOUNTS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+          </select>
+          <button className="btn-ghost btn-sm" onClick={() => fileRef.current.click()}>⬆ Upload CSV</button>
+          <input ref={fileRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleFileUpload} />
+          <button className="btn-ghost btn-sm" onClick={addManual}>+ Add</button>
+          <button className={`btn-ghost btn-sm${showCatMgr ? " active" : ""}`} onClick={() => setShowCatMgr(s => !s)}>⚙ Categories</button>
+        </div>
+      </div>
+
+      {/* Category manager */}
+      {showCatMgr && (
+        <CategoryManager
+          categories={categories}
+          onChange={onCategoriesChange}
+          onClose={() => setShowCatMgr(false)}
+        />
+      )}
+
+      {/* Filter row */}
+      <div className="filter-bar">
+        <input
+          className="inp"
+          placeholder="Search transactions..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <select className="sel" value={filterAccount} onChange={e => setFilterAccount(e.target.value)}>
+          <option value="">All accounts</option>
+          {ACCOUNTS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+        </select>
+        <select className="sel" value={filterSection} onChange={e => setFilterSection(e.target.value)}>
+          <option value="">All sections</option>
+          <option value="income">Income</option>
+          <option value="expenses">Expenses</option>
+          <option value="savings">Savings</option>
+          <option value="transfer">Transfers</option>
+        </select>
+        <div className="filter-right">
+          {uncatCount > 0 && <span className="badge-warn">⚠ {uncatCount} uncategorized</span>}
+          <span className="count-lbl">{filtered.length} of {monthTxs.length}</span>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="table-wrap card">
+        <table className="tx-tbl">
+          <thead>
+            <tr>
+              <th style={{ width: 82 }}>Date</th>
+              <th style={{ width: 190 }}>Account</th>
+              <th>Description</th>
+              <th style={{ width: 95,  textAlign: "right" }}>Amount</th>
+              <th style={{ width: 140 }}>Main Category</th>
+              <th style={{ width: 145 }}>Sub Category</th>
+              <th style={{ width: 145 }}>Remarks</th>
+              <th style={{ width: 32  }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={8} className="empty-cell">
+                  {monthTxs.length === 0
+                    ? "No transactions for this month. Upload a CSV or add manually."
+                    : "No transactions match the current filters."}
+                </td>
+              </tr>
+            )}
+            {filtered.map(tx => (
+              <TransactionRow
+                key={tx.id}
+                tx={tx}
+                allMainCats={allMainCats}
+                getSubsFor={getSubsFor}
+                editingCell={editingCell}
+                setEditingCell={setEditingCell}
+                onCellEdit={handleCellEdit}
+                onDelete={onDeleteTransaction}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Data management */}
+      <div className="card data-mgmt">
+        <div className="data-mgmt-title">Data Management</div>
+        <div className="data-mgmt-sub">Clear transaction data by month. Individual rows can be deleted inline. No bulk delete available.</div>
+        <div className="data-mgmt-row">
+          <select className="sel" value={clearMonthSel} onChange={e => setClearMonthSel(e.target.value)}>
+            <option value="">Select month to clear...</option>
+            {availableMonths.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+          </select>
+          <button
+            className="btn-danger"
+            disabled={!clearMonthSel}
+            onClick={() => { if (clearMonthSel) { onClearMonth(clearMonthSel); setClearMonthSel(""); } }}
+          >
+            Clear {clearMonthSel ? monthLabel(clearMonthSel) : "selected month"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TRANSACTION ROW ─────────────────────────────────────────────────────────
+
+function TransactionRow({ tx, allMainCats, getSubsFor, editingCell, setEditingCell, onCellEdit, onDelete }) {
+  const isUncat = !tx.mainCategory && !tx.isTransfer;
+
+  const isEdit = (field) => editingCell?.txId === tx.id && editingCell?.field === field;
+  const startEdit = (field) => setEditingCell({ txId: tx.id, field });
+  const stopEdit  = () => setEditingCell(null);
+
+  function CellText({ field, value, className }) {
+    const [local, setLocal] = useState(value);
+    useEffect(() => setLocal(value), [value]);
+
+    if (isEdit(field)) {
+      return (
+        <input
+          className="cell-inp"
+          value={local}
+          autoFocus
+          onChange={e => setLocal(e.target.value)}
+          onBlur={() => { onCellEdit(tx.id, field, local); stopEdit(); }}
+          onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
+        />
+      );
+    }
+    return (
+      <span className={`cell-val${className ? " " + className : ""}`} onClick={() => startEdit(field)}>
+        {value || <span className="cell-ph">—</span>}
+      </span>
+    );
+  }
+
+  function CellAmount() {
+    const [local, setLocal] = useState(String(tx.amount));
+    useEffect(() => setLocal(String(tx.amount)), [tx.amount]);
+
+    if (isEdit("amount")) {
+      return (
+        <input
+          className="cell-inp right"
+          value={local}
+          autoFocus
+          onChange={e => setLocal(e.target.value)}
+          onBlur={() => { const n = parseFloat(local); if (!isNaN(n)) onCellEdit(tx.id, "amount", n); stopEdit(); }}
+          onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
+        />
+      );
+    }
+    return (
+      <span
+        className={`cell-val right ${tx.amount >= 0 ? "c-green" : "c-red"}`}
+        onClick={() => startEdit("amount")}
+      >
+        {tx.amount >= 0 ? "+" : "−"}{fmt(Math.abs(tx.amount))}
+      </span>
+    );
+  }
+
+  function CellSelect({ field, value, options, onSelect }) {
+    if (isEdit(field)) {
+      return (
+        <select
+          className="cell-sel"
+          value={value}
+          autoFocus
+          onChange={e => { onSelect(e.target.value); stopEdit(); }}
+          onBlur={stopEdit}
+        >
+          <option value="">— select —</option>
+          {options.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      );
+    }
+    return (
+      <span
+        className={`cell-val${!value ? " cell-ph" : ""}`}
+        onClick={() => startEdit(field)}
+      >
+        {value || "—"}
+      </span>
+    );
+  }
+
+  const subs = getSubsFor(tx.mainCategory);
+
+  return (
+    <tr className={`tx-row${isUncat ? " uncat" : ""}`}>
+      {/* Date */}
+      <td onClick={() => startEdit("date")}>
+        {isEdit("date")
+          ? <input type="date" className="cell-inp" defaultValue={tx.date} autoFocus
+              onBlur={e => { onCellEdit(tx.id, "date", e.target.value); stopEdit(); }} />
+          : <span className="cell-val date-val">{shortDate(tx.date)}</span>
+        }
+      </td>
+
+      {/* Account */}
+      <td>
+        <CellSelect
+          field="account"
+          value={accountLabel(tx.account)}
+          options={ACCOUNTS.map(a => a.label)}
+          onSelect={val => {
+            const acc = ACCOUNTS.find(a => a.label === val);
+            if (acc) onCellEdit(tx.id, "account", acc.id);
+          }}
+        />
+      </td>
+
+      {/* Description */}
+      <td><CellText field="description" value={tx.description} /></td>
+
+      {/* Amount */}
+      <td><CellAmount /></td>
+
+      {/* Main Category */}
+      <td>
+        {isUncat && !isEdit("mainCategory") && (
+          <span className="uncat-badge" onClick={() => startEdit("mainCategory")}>⚠ Uncategorized</span>
         )}
-        {activeTab==='household'&&(()=>{
-          const srGet=(cat,tp)=>srBk.filter(t=>t.category===cat&&t.type===tp).reduce((s,t)=>s+t.amount,0)
-          const nrGet=(cat,tp)=>nrBk.filter(t=>t.category===cat&&t.type===tp).reduce((s,t)=>s+t.amount,0)
-          const allBkAll=[...getAllTx(selectedMonth,'SR_BANK'),...getAllTx(selectedMonth,'NR_BANK')]
-          const needsLabel=allBkAll.filter(t=>t.needsLabel||(!t.category&&!t.customLabel)||t.category==='Uncategorized').length
-          return(
-            <div className="view">
-              <h2 className="view-title">Household Bank Accounts — {moLabel(selectedMonth)}</h2>
-              <p className="hint" style={{marginBottom:16}}>SR and NR columns show which bank account each transaction came from. The same expense may appear in either column depending on who paid that month — the Combined column is always the household total.</p>
+        {(!isUncat || isEdit("mainCategory")) && (
+          <CellSelect
+            field="mainCategory"
+            value={tx.mainCategory}
+            options={allMainCats.map(c => c.main)}
+            onSelect={val => onCellEdit(tx.id, "mainCategory", val)}
+          />
+        )}
+      </td>
 
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
-                {[{id:'SR_BANK',name:'Simran — Scotia Bank',color:'#22c55e'},{id:'NR_BANK',name:'Navneet — Scotia Bank',color:'#3b82f6'}].map(({id,name,color})=>(
-                  <div key={id} style={{background:'#0a0f1e',border:'1px solid #1e293b',borderRadius:10,padding:16}}>
-                    <div style={{fontWeight:700,color,marginBottom:10}}>{name}</div>
-                    <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
-                      <label style={{fontSize:12,color:'#64748b',minWidth:130}}>Opening Balance:</label>
-                      <input type="number" placeholder="0.00" value={getOB(id,selectedMonth)||''} onChange={e=>setOBVal(id,selectedMonth,e.target.value)} style={{width:130}}/>
-                    </div>
-                    <div style={{display:'flex',justifyContent:'space-between',paddingTop:8,borderTop:'1px solid #1e293b'}}>
-                      <span style={{fontSize:12,color:'#64748b'}}>Closing Balance:</span>
-                      <span style={{fontWeight:700,color:getClose(id,selectedMonth)>=0?'#22c55e':'#ef4444'}}>{fmt(getClose(id,selectedMonth))}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* Sub Category */}
+      <td>
+        <CellSelect
+          field="subCategory"
+          value={tx.subCategory}
+          options={subs}
+          onSelect={val => onCellEdit(tx.id, "subCategory", val)}
+        />
+      </td>
 
-              {needsLabel>0&&<div style={{background:'#1c0a00',border:'1px solid #f97316',borderRadius:8,padding:'10px 16px',marginBottom:16,fontSize:13,color:'#f97316'}}>⚠ {needsLabel} bank transaction{needsLabel>1?'s':''} need{needsLabel===1?'s':''} labels — scroll to transaction list below or use the label prompt.</div>}
+      {/* Remarks */}
+      <td><CellText field="remarks" value={tx.remarks} className="remarks-val" /></td>
 
-              <div className="section">
-                <div className="section-head"><h3>Planned vs Actual — Bank Accounts</h3></div>
-                <div style={{overflowX:'auto'}}>
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th style={{minWidth:180}}>Category</th>
-                        <th className="num" style={{color:'#22c55e'}}>SR Bank</th>
-                        <th className="num" style={{color:'#3b82f6'}}>NR Bank</th>
-                        <th className="num">Combined</th>
-                        <th className="num">Budget</th>
-                        <th className="num">Diff</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {HH_GROUPS.map(gName=>{
-                        const {color,cats}=CATEGORY_GROUPS[gName]
-                        const isIncome=gName==='Income'
-                        const type=isIncome?'credit':'debit'
-                        const groupSR=cats.reduce((s,c)=>s+srGet(c,type),0)
-                        const groupNR=cats.reduce((s,c)=>s+nrGet(c,type),0)
-                        const groupComb=groupSR+groupNR
-                        const groupBgt=cats.reduce((s,c)=>s+(budget[c]||0),0)
-                        const diff=isIncome?groupComb-groupBgt:groupBgt-groupComb
-                        return(
-                          <React.Fragment key={gName}>
-                            <tr style={{background:'#0a0f1e'}}>
-                              <td colSpan={7} style={{padding:'8px 16px 4px',fontSize:11,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color,borderTop:'1px solid #1e293b'}}>{gName}</td>
-                            </tr>
-                            {cats.map(cat=>{
-                              const sr=srGet(cat,type), nr=nrGet(cat,type), comb=sr+nr, bgt=budget[cat]||0
-                              if(!sr&&!nr&&!bgt) return null
-                              const d=isIncome?comb-bgt:bgt-comb
-                              return(
-                                <tr key={cat}>
-                                  <td style={{paddingLeft:24,color:'#94a3b8'}}>{cat}</td>
-                                  <td className="num" style={{color:sr?'#22c55e':'#1e293b'}}>{sr?fmt(sr):'—'}</td>
-                                  <td className="num" style={{color:nr?'#3b82f6':'#1e293b'}}>{nr?fmt(nr):'—'}</td>
-                                  <td className="num">{comb?fmt(comb):'—'}</td>
-                                  <td className="num muted">{bgt?fmt(bgt):'—'}</td>
-                                  <td className={`num ${d>=0?'green':'red'}`}>{bgt?(d>=0?'+':'')+fmt(d):'—'}</td>
-                                  <td>{bgt&&d<0?<span className="badge-warn">Off</span>:bgt&&d>=0?<span className="badge-ok">✓</span>:<span className="muted">—</span>}</td>
-                                </tr>
-                              )
-                            })}
-                            <tr className="total-row">
-                              <td style={{paddingLeft:16,fontWeight:700}}>Total {gName}</td>
-                              <td className="num" style={{color:'#22c55e'}}>{groupSR?fmt(groupSR):'—'}</td>
-                              <td className="num" style={{color:'#3b82f6'}}>{groupNR?fmt(groupNR):'—'}</td>
-                              <td className="num bold">{fmt(groupComb)}</td>
-                              <td className="num muted">{groupBgt?fmt(groupBgt):'—'}</td>
-                              <td className={`num ${diff>=0?'green':'red'}`}>{groupBgt?(diff>=0?'+':'')+fmt(diff):'—'}</td>
-                              <td/>
-                            </tr>
-                          </React.Fragment>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+      {/* Delete */}
+      <td>
+        <button className="btn-del" onClick={() => onDelete(tx.id)} title="Delete transaction">✕</button>
+      </td>
+    </tr>
+  );
+}
 
-              <div className="section">
-                <div className="section-head">
-                  <h3>All Bank Transactions ({allBkAll.length})</h3>
-                  {needsLabel>0&&<span className="badge-warn">{needsLabel} need labels</span>}
-                </div>
-                {allBkAll.length===0?<p className="empty-msg">No bank transactions for {selectedMonth}. Upload SR or NR Scotia Bank CSV.</p>:(
-                  <div className="tx-list">
-                    {allBkAll.sort((a,b)=>b.date.localeCompare(a.date)).map(t=>(
-                      <div key={t.id} className={`tx-row ${t.needsLabel||t.category==='Uncategorized'||!t.category?'tx-unlabeled':''}`}>
-                        <span className="tx-date">{t.date.slice(5)}</span>
-                        <span className="tx-tag" style={{background:t.account==='SR_BANK'?'#052e16':'#001236',color:t.account==='SR_BANK'?'#22c55e':'#60a5fa'}}>{t.account==='SR_BANK'?'SR':'NR'}</span>
-                        <span className="tx-merchant">{t.customLabel||t.merchant}</span>
-                        {t.remark&&<span style={{fontSize:11,color:'#475569',fontStyle:'italic',marginLeft:4}}>({t.remark})</span>}
-                        {EXCLUDE_CATS.includes(t.category)&&<span style={{fontSize:11,color:'#64748b',marginLeft:4,background:'#1e293b',borderRadius:4,padding:'2px 6px'}}>excluded</span>}
-                        <span className={`tx-amt ${t.type==='credit'?'green':'red'}`}>{t.type==='credit'?'+':'-'}{fmt(t.amount)}</span>
-                        <select value={t.customLabel?'Custom / Misc':t.category||''} onChange={e=>handleCatChange(t.id,e.target.value)} className="tx-cat-sel">
-                          <option value="">— Uncategorized —</option>
-                          <option value="Transfer — Exclude">Transfer — Exclude (internal)</option>
-                          <option value="Custom / Misc">✏ Custom / Misc...</option>
-                          <optgroup label="──────────"/>
-                          {Object.entries(CATEGORY_GROUPS).filter(([g])=>g!=='Transfers').flatMap(([,{cats}])=>cats.map(c=><option key={c} value={c}>{c}</option>))}
-                        </select>
-                      </div>
-                    ))}
-                  </div>
+// ─── CATEGORY MANAGER ────────────────────────────────────────────────────────
+
+function CategoryManager({ categories, onChange, onClose }) {
+  const [local, setLocal] = useState(JSON.parse(JSON.stringify(categories)));
+  const [newHead, setNewHead] = useState({ income: "", expenses: "", savings: "" });
+  const [newSub,  setNewSub]  = useState({});
+
+  function addHead(section) {
+    const v = newHead[section].trim();
+    if (!v) return;
+    if (section === "savings") {
+      setLocal(c => ({ ...c, savings: [...c.savings, { head: v, budget: 0 }] }));
+    } else {
+      setLocal(c => ({ ...c, [section]: [...c[section], { head: v, subs: [], budget: {} }] }));
+    }
+    setNewHead(n => ({ ...n, [section]: "" }));
+  }
+
+  function addSub(section, hi) {
+    const k = `${section}-${hi}`;
+    const v = (newSub[k] || "").trim();
+    if (!v) return;
+    setLocal(c => {
+      const u = JSON.parse(JSON.stringify(c));
+      u[section][hi].subs.push(v);
+      u[section][hi].budget[v] = 0;
+      return u;
+    });
+    setNewSub(n => ({ ...n, [k]: "" }));
+  }
+
+  function updateBudget(section, hi, sub, val) {
+    setLocal(c => {
+      const u = JSON.parse(JSON.stringify(c));
+      if (section === "savings") { u.savings[hi].budget = parseFloat(val) || 0; }
+      else { u[section][hi].budget[sub] = parseFloat(val) || 0; }
+      return u;
+    });
+  }
+
+  function removeHead(section, hi) {
+    setLocal(c => {
+      const u = JSON.parse(JSON.stringify(c));
+      u[section].splice(hi, 1);
+      return u;
+    });
+  }
+
+  function removeSub(section, hi, si) {
+    setLocal(c => {
+      const u = JSON.parse(JSON.stringify(c));
+      const sub = u[section][hi].subs[si];
+      u[section][hi].subs.splice(si, 1);
+      delete u[section][hi].budget[sub];
+      return u;
+    });
+  }
+
+  return (
+    <div className="cat-mgr card">
+      <div className="cat-mgr-hdr">
+        <span className="cat-mgr-title">⚙ Manage Categories — changes propagate to all pages</span>
+        <button className="btn-ghost btn-sm" onClick={onClose}>✕ Close without saving</button>
+      </div>
+
+      {["income", "expenses", "savings"].map(section => (
+        <div key={section} className="cat-section">
+          <div className="cat-section-lbl">{section.charAt(0).toUpperCase() + section.slice(1)}</div>
+          {(section === "savings" ? local.savings : local[section]).map((h, hi) => (
+            <div key={hi} className="cat-head-block">
+              <div className="cat-head-row">
+                <span className="cat-head-name">{h.head}</span>
+                {section === "savings" && (
+                  <label className="cat-budget-pair">
+                    <span className="cat-budget-lbl">Budget $</span>
+                    <input className="inp budget-inp" type="number" value={h.budget}
+                      onChange={e => updateBudget(section, hi, null, e.target.value)} />
+                  </label>
                 )}
+                <button className="btn-del" onClick={() => removeHead(section, hi)}>✕</button>
               </div>
-            </div>
-          )
-        })()}
-        {activeTab==='spending'&&(
-          <div className="view">
-            <h2 className="view-title">CC Spending — {moLabel(selectedMonth)}</h2>
-            <p className="hint" style={{marginBottom:16}}>Day-to-day spending on Scotia Visa and CIBC Costco card. Kept separate from bank numbers to avoid double-counting.</p>
-
-            <div className="kpi-row" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
-              <div className="kpi-card"><div className="kpi-label">Scotia Visa</div><div className="kpi-value kpi-red">{fmt(srCc.filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0))}</div><div className="kpi-sub">{srCc.length} transactions</div></div>
-              <div className="kpi-card"><div className="kpi-label">CIBC (Costco)</div><div className="kpi-value kpi-red">{fmt(cibc.filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0))}</div><div className="kpi-sub">{cibc.length} transactions</div></div>
-              <div className="kpi-card"><div className="kpi-label">Total CC Spend</div><div className="kpi-value kpi-red">{fmt(totalCcSpend)}</div><div className="kpi-sub">Both cards</div></div>
-            </div>
-
-            {CC_SPEND_GROUPS.map(gName=>{
-              const {color,cats}=CATEGORY_GROUPS[gName]
-              const groupTx=allCc.filter(t=>cats.includes(t.category)&&t.type==='debit')
-              const groupAmt=groupTx.reduce((s,t)=>s+t.amount,0)
-              const groupBgt=cats.reduce((s,c)=>s+(budget[c]||0),0)
-              if(!groupTx.length&&!groupBgt) return null
-              return(
-                <div key={gName} className="section">
-                  <div className="section-head">
-                    <h3 style={{color}}>{gName}</h3>
-                    <div style={{display:'flex',alignItems:'center',gap:12}}>
-                      <span style={{fontSize:13}}>{fmt(groupAmt)} {groupBgt?<span className="muted">/ {fmt(groupBgt)}</span>:null}</span>
-                      {groupBgt&&<div style={{width:120}}><Bar actual={groupAmt} budget={groupBgt} color={color} height={8}/></div>}
-                      {groupBgt&&groupAmt>groupBgt&&<span className="badge-warn">Over</span>}
-                    </div>
-                  </div>
-                  <table className="data-table">
-                    <thead><tr><th>Category</th><th>Actual</th><th>Budget</th><th style={{width:180}}>Progress</th><th>Status</th></tr></thead>
-                    <tbody>
-                      {cats.map(cat=>{
-                        const actual=allCc.filter(t=>t.category===cat&&t.type==='debit').reduce((s,t)=>s+t.amount,0)
-                        const bgt=budget[cat]||0; if(!actual&&!bgt) return null
-                        const over=bgt>0&&actual>bgt
-                        return(
-                          <tr key={cat}>
-                            <td style={{paddingLeft:20}}>{cat}</td>
-                            <td className="num">{fmt(actual)}</td>
-                            <td className="num muted">{bgt?fmt(bgt):'—'}</td>
-                            <td>{bgt?<div style={{display:'flex',alignItems:'center',gap:8}}><div style={{flex:1}}><Bar actual={actual} budget={bgt} color={color}/></div><span style={{fontSize:11,color:over?'#ef4444':'#64748b',minWidth:34}}>{bgt>0?Math.round(actual/bgt*100):0}%</span></div>:null}</td>
-                            <td>{over?<span className="badge-warn">Over</span>:bgt?<span className="badge-ok">OK</span>:<span className="muted">—</span>}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )
-            })}
-
-            <div className="section">
-              <div className="section-head">
-                <h3>All CC Transactions ({allCc.length})</h3>
-                {allCc.filter(t=>t.category==='Uncategorized').length>0&&<span className="badge-warn">{allCc.filter(t=>t.category==='Uncategorized').length} uncategorized</span>}
-              </div>
-              {allCc.length===0?<p className="empty-msg">No CC transactions for {selectedMonth}. Upload Scotia Visa or CIBC CSV.</p>:(
-                <div className="tx-list">
-                  {allCc.sort((a,b)=>b.date.localeCompare(a.date)).map(t=>(
-                    <div key={t.id} className={`tx-row ${t.category==='Uncategorized'||!t.category?'tx-unlabeled':''}`}>
-                      <span className="tx-date">{t.date.slice(5)}</span>
-                      <span className="tx-tag">{t.account==='SR_CIBC'?'CIBC':'Visa'}</span>
-                      <span className="tx-merchant">{t.customLabel||t.merchant}</span>
-                      {t.remark&&<span style={{fontSize:11,color:'#475569',fontStyle:'italic',marginLeft:4}}>({t.remark})</span>}
-                      <span className={`tx-amt ${t.type==='credit'?'green':'red'}`}>{t.type==='credit'?'+':'-'}{fmt(t.amount)}</span>
-                      <select value={t.customLabel?'Custom / Misc':t.category||''} onChange={e=>handleCatChange(t.id,e.target.value)} className="tx-cat-sel">
-                        <option value="">— Uncategorized —</option>
-                        <option value="Custom / Misc">✏ Custom / Misc...</option>
-                        <optgroup label="──────────"/>
-                        {CC_SPEND_GROUPS.flatMap(g=>CATEGORY_GROUPS[g].cats.map(c=><option key={c} value={c}>{c}</option>))}
-                        <option value="Auto Maintenance">Auto Maintenance</option>
-                        <option value="Parking">Parking</option>
-                        <option value="Rideshare">Rideshare</option>
-                      </select>
+              {section !== "savings" && h.subs && (
+                <div className="cat-subs">
+                  {h.subs.map((sub, si) => (
+                    <div key={si} className="cat-sub-row">
+                      <span className="cat-sub-name">{sub}</span>
+                      <label className="cat-budget-pair">
+                        <span className="cat-budget-lbl">$</span>
+                        <input className="inp budget-inp" type="number" value={h.budget[sub] || 0}
+                          onChange={e => updateBudget(section, hi, sub, e.target.value)} />
+                      </label>
+                      <button className="btn-del" onClick={() => removeSub(section, hi, si)}>✕</button>
                     </div>
                   ))}
+                  <div className="cat-add-row">
+                    <input className="inp" placeholder="New sub-category..."
+                      value={newSub[`${section}-${hi}`] || ""}
+                      onChange={e => setNewSub(n => ({ ...n, [`${section}-${hi}`]: e.target.value }))}
+                      onKeyDown={e => e.key === "Enter" && addSub(section, hi)} />
+                    <button className="btn-ghost btn-sm" onClick={() => addSub(section, hi)}>+ Add Sub</button>
+                  </div>
                 </div>
               )}
             </div>
-
-            {allCc.filter(t=>t.customLabel).length>0&&(
-              <div className="section">
-                <div className="section-head"><h3 style={{color:'#94a3b8'}}>✏ Custom / Misc</h3></div>
-                <table className="data-table">
-                  <thead><tr><th>Date</th><th>Label</th><th>Merchant</th><th>Remark</th><th>Amount</th></tr></thead>
-                  <tbody>
-                    {allCc.filter(t=>t.customLabel).map(t=>(
-                      <tr key={t.id}><td>{t.date}</td><td style={{color:'#e2e8f0',fontWeight:600}}>{t.customLabel}</td><td className="muted">{t.merchant}</td><td className="muted">{t.remark||'—'}</td><td className="num red">{fmt(t.amount)}</td></tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          ))}
+          <div className="cat-add-row" style={{ marginTop: 8 }}>
+            <input className="inp" placeholder={`New ${section} head...`}
+              value={newHead[section]}
+              onChange={e => setNewHead(n => ({ ...n, [section]: e.target.value }))}
+              onKeyDown={e => e.key === "Enter" && addHead(section)} />
+            <button className="btn-ghost btn-sm" onClick={() => addHead(section)}>+ Add Head</button>
           </div>
-        )}
-        {activeTab==='investments'&&(
-          <div className="view">
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
-              <h2 style={{margin:0}}>Wealthsimple Portfolio</h2>
-              <div style={{display:'flex',gap:12,alignItems:'center'}}>
-                {investments?.lastUpdated&&<span className="hint">As of {investments.lastUpdated}</span>}
-                <button className="btn-outline" onClick={()=>{setUploadAccount('WEALTHSIMPLE');setShowUpload(true)}}>↑ Update Holdings</button>
-              </div>
-            </div>
-            {!investments?(
-              <div className="empty-state">
-                <p>Upload your Wealthsimple Holdings CSV to track your portfolio.</p>
-                <button className="btn-primary" onClick={()=>{setUploadAccount('WEALTHSIMPLE');setShowUpload(true)}}>Upload Now</button>
-              </div>
-            ):(
-              <>
-                <div className="kpi-row" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
-                  {[
-                    {l:'FHSA',v:investments.FHSA,sub:'First Home Savings'},
-                    {l:'TFSA',v:investments.TFSA,sub:'Tax-Free Savings'},
-                    {l:'RRSP',v:investments.RRSP,sub:'Retirement Savings'},
-                    {l:'Non-Registered',v:investments['Non-Registered'],sub:'NVDA · SOXL · KVYO'},
-                  ].map(({l,v,sub})=>(
-                    <div key={l} className="kpi-card"><div className="kpi-label">{l}</div><div className="kpi-value kpi-accent">{fmt(v)}</div><div className="kpi-sub">{sub}</div></div>
-                  ))}
-                </div>
-                <div className="kpi-row" style={{gridTemplateColumns:'1fr',marginTop:0}}>
-                  <div className="kpi-card" style={{gridColumn:'1/-1'}}>
-                    <div className="kpi-label">Total Portfolio</div>
-                    <div className="kpi-value nw-accent">{fmt(invTotal)}</div>
-                    <div className="kpi-sub">Net Worth (incl. bank): {fmt(netWorth)}</div>
-                  </div>
-                </div>
+        </div>
+      ))}
 
-                <div className="section">
-                  <div className="section-head"><h3>Net Worth Breakdown</h3></div>
-                  <div style={{background:'#0a0f1e',border:'1px solid #1e293b',borderRadius:10,padding:'4px 0'}}>
-                    {[
-                      {l:'SR Scotia Bank (est.)',v:srBal,c:'#22c55e'},
-                      {l:'NR Scotia Bank (est.)',v:nrBal,c:'#3b82f6'},
-                      {l:'SR FHSA',v:investments.FHSA,c:'#a855f7'},
-                      {l:'SR TFSA',v:investments.TFSA,c:'#a855f7'},
-                      {l:'NR RRSP',v:investments.RRSP,c:'#a855f7'},
-                      {l:'Non-Registered (Wealthsimple)',v:investments['Non-Registered'],c:'#f97316'},
-                    ].map(({l,v,c})=>(
-                      <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'12px 20px',borderBottom:'1px solid #1e293b'}}>
-                        <span style={{color:'#94a3b8'}}>{l}</span>
-                        <span style={{color:c,fontWeight:600}}>{fmt(v)}</span>
-                      </div>
-                    ))}
-                    <div style={{display:'flex',justifyContent:'space-between',padding:'14px 20px',background:'#0f172a'}}>
-                      <span style={{fontWeight:700,color:'#e2e8f0'}}>Total Net Worth</span>
-                      <span style={{fontWeight:700,fontSize:18,color:'#22c55e'}}>{fmt(netWorth)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="section">
-                  <div className="section-head"><h3>Strategy Notes</h3></div>
-                  <div style={{display:'flex',flexDirection:'column',gap:12}}>
-                    {[
-                      {type:'warn',title:'⚠️ SOXL Risk Alert',body:'Your non-registered account holds SOXL — a 3× leveraged semiconductor ETF. It can drop 60–80% in a downturn due to daily rebalancing decay. Review whether this aligns with your family risk tolerance given the vehicle loan, daycare, and school fees.'},
-                      {type:'tip',title:'💡 FHSA Priority — Both of You',body:'Navneet should also open her own FHSA. You each get $8,000/year room ($40,000 lifetime). Combined you can shelter $80,000 tax-free for your first home purchase. From your 2025 sheet, NR FHSA was planned but contributions were missed most months.'},
-                      {type:'tip',title:'📈 RRSP Tax Advantage',body:'At ~$96K/year SR income, every RRSP dollar saves roughly 30–33 cents in tax. Priority order: FHSA first (double benefit — deduction + tax-free growth), then RRSP, then TFSA.'},
-                      {type:'tip',title:'👨‍👧‍👦 RESP — Two Kids',body:'Gurshaan and Gurnadar each qualify for the Canada Education Savings Grant (CESG) — 20% on first $2,500/year = $500 free money per child. Maximizing both RESPs before other investments is often the best return.'},
-                    ].map(({type,title,body})=>(
-                      <div key={title} style={{background:type==='warn'?'#1c0700':'#051a36',border:`1px solid ${type==='warn'?'#f97316':'#1e3a5f'}`,borderRadius:10,padding:'14px 18px'}}>
-                        <div style={{fontWeight:700,marginBottom:6,color:type==='warn'?'#f97316':'#60a5fa'}}>{title}</div>
-                        <p style={{color:'#94a3b8',margin:0,fontSize:13,lineHeight:1.6}}>{body}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {activeTab==='annual'&&(()=>{
-          const months=['01','02','03','04','05','06','07','08','09','10','11','12'].map(m=>`2026-${m}`)
-          const mNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-          const rows=[
-            {label:'SR Income',    fn:mo=>sumOf(getTx(mo,'SR_BANK'),INCOME_CATS,'credit'), c:'#22c55e'},
-            {label:'NR Income',    fn:mo=>sumOf(getTx(mo,'NR_BANK'),INCOME_CATS,'credit'), c:'#22c55e'},
-            {label:'Total Income', fn:mo=>sumOf([...getTx(mo,'SR_BANK'),...getTx(mo,'NR_BANK')],INCOME_CATS,'credit'), c:'#22c55e', bold:true},
-            {label:'Fixed Exp.',   fn:mo=>sumOf([...getTx(mo,'SR_BANK'),...getTx(mo,'NR_BANK')],FIXED_CATS,'debit'), c:'#f97316'},
-            {label:'CC Spending',  fn:mo=>[...getTx(mo,'SR_CC'),...getTx(mo,'SR_CIBC')].filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0), c:'#ef4444'},
-            {label:'Savings',      fn:mo=>sumOf([...getTx(mo,'SR_BANK'),...getTx(mo,'NR_BANK')],SAVINGS_CATS,'debit'), c:'#3b82f6', bold:true},
-          ]
-          const maxIncome=Math.max(...months.map(mo=>sumOf([...getTx(mo,'SR_BANK'),...getTx(mo,'NR_BANK')],INCOME_CATS,'credit')),1)
-          return(
-            <div className="view">
-              <h2 className="view-title">2026 Annual Overview</h2>
-
-              <div className="section">
-                <div className="section-head"><h3>Monthly Income vs Spending</h3></div>
-                <div style={{display:'flex',gap:4,alignItems:'flex-end',height:160,padding:'0 0 8px',overflowX:'auto'}}>
-                  {months.map((mo,i)=>{
-                    const inc=sumOf([...getTx(mo,'SR_BANK'),...getTx(mo,'NR_BANK')],INCOME_CATS,'credit')
-                    const exp=sumOf([...getTx(mo,'SR_BANK'),...getTx(mo,'NR_BANK')],FIXED_CATS,'debit')
-                    const cc=[...getTx(mo,'SR_CC'),...getTx(mo,'SR_CIBC')].filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0)
-                    const sav=sumOf([...getTx(mo,'SR_BANK'),...getTx(mo,'NR_BANK')],SAVINGS_CATS,'debit')
-                    const hasData=inc||exp||cc||sav
-                    return(
-                      <div key={mo} style={{flex:1,minWidth:36,display:'flex',flexDirection:'column',alignItems:'center',gap:2,opacity:hasData?1:0.3}}>
-                        <div style={{width:'100%',display:'flex',flexDirection:'column',justifyContent:'flex-end',height:140,gap:1}}>
-                          {[{v:inc,c:'#22c55e'},{v:exp+cc,c:'#f97316'},{v:sav,c:'#3b82f6'}].map(({v,c},j)=>(
-                            <div key={j} style={{width:'100%',height:Math.max((v/maxIncome)*130,v>0?2:0),background:c,borderRadius:'2px 2px 0 0',minHeight:v>0?2:0}}/>
-                          ))}
-                        </div>
-                        <span style={{fontSize:10,color:'#475569'}}>{mNames[i]}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div style={{display:'flex',gap:16,justifyContent:'center',marginTop:8,fontSize:12}}>
-                  {[{c:'#22c55e',l:'Income'},{c:'#f97316',l:'Fixed+CC'},{c:'#3b82f6',l:'Savings'}].map(({c,l})=>(
-                    <div key={l} style={{display:'flex',alignItems:'center',gap:6}}><div style={{width:12,height:12,background:c,borderRadius:2}}/><span style={{color:'#64748b'}}>{l}</span></div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="section">
-                <div className="section-head"><h3>Monthly Summary Table</h3></div>
-                <div style={{overflowX:'auto'}}>
-                  <table className="annual-table">
-                    <thead><tr><th>Category</th>{mNames.map(m=><th key={m}>{m}</th>)}<th>Total</th></tr></thead>
-                    <tbody>
-                      {rows.map(({label,fn,c,bold})=>{
-                        const vals=months.map(fn)
-                        const total=vals.reduce((s,v)=>s+v,0)
-                        return(
-                          <tr key={label} className={bold?'bold-row':''}>
-                            <td style={{color:c}}>{label}</td>
-                            {vals.map((v,i)=><td key={i} className={`num ${c==='#22c55e'?'green':c==='#3b82f6'?'blue':'red'}`}>{v>0?'$'+Math.round(v).toLocaleString():'—'}</td>)}
-                            <td className={`num bold ${c==='#22c55e'?'green':c==='#3b82f6'?'blue':'red'}`}>${Math.round(total).toLocaleString()}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )
-        })()}
-      </main>
-
-      <footer className="footer">
-        <span className="muted">Rathore Household · {new Date().getFullYear()} · Built with ❤️</span>
-        <button className="btn-danger" onClick={()=>{if(window.confirm('Clear ALL data? This cannot be undone.')){setTransactions([]);setInvestments(null);setOpeningBal({});setLabelQueue([])}}}>Clear All Data</button>
-      </footer>
+      <div className="cat-mgr-footer">
+        <button className="btn-primary" onClick={() => { onChange(local); onClose(); }}>Save Changes</button>
+        <button className="btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+      </div>
     </div>
-  )
+  );
+}
+
+// ─── INVESTMENTS TAB ─────────────────────────────────────────────────────────
+
+function InvestmentsTab({ investments, onInvestmentsChange, showToast }) {
+  const [uploadAccount, setUploadAccount] = useState("sr_fhsa");
+  const fileRef = useRef();
+
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const rows = parseInvestmentCSV(ev.target.result, uploadAccount);
+      onInvestmentsChange(prev => [...prev.filter(r => r.account !== uploadAccount), ...rows]);
+      showToast(`Imported ${rows.length} holdings for ${INVEST_ACCOUNTS.find(a => a.id === uploadAccount)?.label}`);
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  }
+
+  // Group by account
+  const grouped = {};
+  investments.forEach(inv => { if (!grouped[inv.account]) grouped[inv.account] = []; grouped[inv.account].push(inv); });
+
+  const totalBook = investments.reduce((s,i) => s + i.bookValue,   0);
+  const totalMkt  = investments.reduce((s,i) => s + i.marketValue, 0);
+  const totalGain = totalMkt - totalBook;
+
+  return (
+    <div className="tab-pane">
+      <div className="month-bar">
+        <span className="month-label">Wealthsimple Portfolio</span>
+        <div className="top-actions">
+          <select className="sel" value={uploadAccount} onChange={e => setUploadAccount(e.target.value)}>
+            {INVEST_ACCOUNTS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+          </select>
+          <button className="btn-ghost btn-sm" onClick={() => fileRef.current.click()}>⬆ Upload CSV</button>
+          <input ref={fileRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleFile} />
+        </div>
+      </div>
+
+      {/* Account cards */}
+      <div className="inv-cards">
+        {INVEST_ACCOUNTS.map(acc => {
+          const rows = grouped[acc.id] || [];
+          const book = rows.reduce((s,r) => s + r.bookValue,   0);
+          const mkt  = rows.reduce((s,r) => s + r.marketValue, 0);
+          const gain = mkt - book;
+          const pct  = book > 0 ? ((gain / book) * 100).toFixed(1) : "0.0";
+          return (
+            <div key={acc.id} className="inv-card">
+              <div className="inv-card-lbl">{acc.label}</div>
+              <div className={`inv-card-val ${mkt > 0 ? "c-green" : "c-muted"}`}>
+                {mkt > 0 ? fmt(mkt) : "—"}
+              </div>
+              {mkt > 0 && (
+                <div className="inv-card-sub">
+                  Book {fmt(book)} · <span className={gain >= 0 ? "c-green" : "c-red"}>
+                    {gain >= 0 ? "+" : ""}{fmt(gain)} ({pct}%)
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Portfolio total tile */}
+      {totalMkt > 0 && (
+        <div className="tile inv-total-tile">
+          <div className="tile-label">Total Portfolio</div>
+          <div className="tile-value c-green">{fmt(totalMkt)}</div>
+          <div className="tile-sub">
+            Book {fmt(totalBook)} · gain&nbsp;
+            <span className={totalGain >= 0 ? "c-green" : "c-red"}>
+              {totalGain >= 0 ? "+" : ""}{fmt(Math.abs(totalGain))}&nbsp;
+              ({totalBook > 0 ? ((totalGain / totalBook) * 100).toFixed(1) : "0.0"}%)
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Holdings table */}
+      {investments.length > 0 ? (
+        <div className="table-wrap card">
+          <table className="tx-tbl">
+            <thead>
+              <tr>
+                <th>Account</th>
+                <th>Symbol</th>
+                <th>Holding</th>
+                <th style={{ textAlign: "right", width: 70 }}>Qty</th>
+                <th style={{ textAlign: "right", width: 105 }}>Book Value</th>
+                <th style={{ textAlign: "right", width: 110 }}>Market Value</th>
+                <th style={{ textAlign: "right", width: 95 }}>Gain / Loss</th>
+              </tr>
+            </thead>
+            <tbody>
+              {investments.map(inv => {
+                const gain     = inv.marketValue - inv.bookValue;
+                const accLabel = INVEST_ACCOUNTS.find(a => a.id === inv.account)?.label || inv.account;
+                return (
+                  <tr key={inv.id} className="tx-row">
+                    <td><span className="acc-chip">{accLabel}</span></td>
+                    <td style={{ fontWeight: 500 }}>{inv.symbol}</td>
+                    <td>{inv.name}</td>
+                    <td style={{ textAlign: "right" }} className="c-muted">{inv.qty.toFixed(2)}</td>
+                    <td style={{ textAlign: "right" }}>{fmtFull(inv.bookValue)}</td>
+                    <td style={{ textAlign: "right", fontWeight: 500 }}>{fmtFull(inv.marketValue)}</td>
+                    <td style={{ textAlign: "right" }} className={gain >= 0 ? "c-green" : "c-red"}>
+                      {gain >= 0 ? "+" : ""}{fmtFull(gain)}
+                    </td>
+                  </tr>
+                );
+              })}
+              <tr className="tx-row total-row">
+                <td colSpan={4} style={{ fontWeight: 500 }}>Total</td>
+                <td style={{ textAlign: "right", fontWeight: 500 }}>{fmtFull(totalBook)}</td>
+                <td style={{ textAlign: "right", fontWeight: 500 }}>{fmtFull(totalMkt)}</td>
+                <td style={{ textAlign: "right", fontWeight: 500 }} className={totalGain >= 0 ? "c-green" : "c-red"}>
+                  {totalGain >= 0 ? "+" : ""}{fmtFull(totalGain)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="empty-state">Upload your Wealthsimple CSV to view your portfolio holdings</div>
+      )}
+    </div>
+  );
+}
+
+// ─── ANNUAL TAB ──────────────────────────────────────────────────────────────
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function AnnualTab({ transactions, categories, selectedYear, onPrevYear, onNextYear }) {
+  const now           = new Date();
+  const currentMKey   = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+
+  const budgetIncome  = categories.income.reduce((s,h)   => s + Object.values(h.budget).reduce((a,b)=>a+b,0), 0);
+  const budgetExp     = categories.expenses.reduce((s,h)  => s + Object.values(h.budget).reduce((a,b)=>a+b,0), 0);
+  const budgetSav     = categories.savings.reduce((s,h)   => s + h.budget, 0);
+
+  const monthData = Array.from({ length: 12 }, (_, i) => {
+    const key  = `${selectedYear}-${String(i+1).padStart(2,"0")}`;
+    const txs  = transactions.filter(t => t.month === key && !t.isTransfer);
+    const inc  = txs.filter(t => t.section === "income").reduce((s,t)   => s + Math.abs(t.amount), 0);
+    const exp  = txs.filter(t => t.section === "expenses").reduce((s,t) => s + Math.abs(t.amount), 0);
+    const sav  = txs.filter(t => t.section === "savings").reduce((s,t)  => s + Math.abs(t.amount), 0);
+    return { key, name: MONTH_NAMES[i], income: inc, expenses: exp, savings: sav, surplus: inc - exp - sav, hasTx: txs.length > 0 };
+  });
+
+  const completed  = monthData.filter(m => m.hasTx && m.key <= currentMKey);
+  const ytdIncome  = completed.reduce((s,m) => s + m.income,   0);
+  const ytdExp     = completed.reduce((s,m) => s + m.expenses, 0);
+  const ytdSav     = completed.reduce((s,m) => s + m.savings,  0);
+  const ytdSurplus = ytdIncome - ytdExp - ytdSav;
+  const n          = completed.length || 1;
+
+  return (
+    <div className="tab-pane">
+      <div className="month-bar">
+        <div className="month-nav">
+          <button className="btn-ghost" onClick={onPrevYear}>◀</button>
+          <span className="month-label">{selectedYear}</span>
+          <button className="btn-ghost" onClick={onNextYear}>▶</button>
+        </div>
+      </div>
+
+      {/* YTD tiles */}
+      <div className="tiles-row mb-3">
+        <div className="tile"><div className="tile-label">YTD Income</div>    <div className="tile-value c-green">{fmt(ytdIncome)}</div>  <div className="tile-sub">{completed.length} months · avg {fmt(Math.round(ytdIncome/n))}/mo</div></div>
+        <div className="tile"><div className="tile-label">YTD Expenses</div>  <div className="tile-value c-red">{fmt(ytdExp)}</div>      <div className="tile-sub">avg {fmt(Math.round(ytdExp/n))}/mo</div></div>
+        <div className="tile"><div className="tile-label">YTD Savings</div>   <div className="tile-value c-green">{fmt(ytdSav)}</div>    <div className="tile-sub">avg {fmt(Math.round(ytdSav/n))}/mo</div></div>
+        <div className="tile"><div className="tile-label">YTD Surplus</div>   <div className={`tile-value ${ytdSurplus >= 0 ? "c-green" : "c-red"}`}>{fmt(ytdSurplus)}</div><div className="tile-sub">avg {fmt(Math.round(ytdSurplus/n))}/mo</div></div>
+      </div>
+
+      <div className="table-wrap card">
+        <table className="tx-tbl annual-tbl">
+          <thead>
+            <tr>
+              <th style={{ textAlign: "left", width: 110 }}>Month</th>
+              <th style={{ textAlign: "right" }}>Budget Income</th>
+              <th style={{ textAlign: "right" }}>Actual Income</th>
+              <th style={{ textAlign: "right" }}>Budget Expense</th>
+              <th style={{ textAlign: "right" }}>Actual Expense</th>
+              <th style={{ textAlign: "right" }}>Budget Savings</th>
+              <th style={{ textAlign: "right" }}>Actual Savings</th>
+              <th style={{ textAlign: "right" }}>Surplus</th>
+            </tr>
+          </thead>
+          <tbody>
+            {monthData.map(m => {
+              const isCurrent = m.key === currentMKey;
+              const isFuture  = m.key > currentMKey && !m.hasTx;
+              return (
+                <tr key={m.key} className={`tx-row${isCurrent ? " current-month" : ""}${isFuture ? " future-month" : ""}`}>
+                  <td style={{ fontWeight: isCurrent ? 600 : 400 }}>
+                    {m.name.slice(0,3)}
+                    {isCurrent && <span className="current-dot"> ●</span>}
+                  </td>
+                  <td style={{ textAlign: "right" }} className="c-muted">{fmt(budgetIncome)}</td>
+                  <td style={{ textAlign: "right" }} className={m.hasTx ? colorCls(getActualColor(m.income, budgetIncome, "income")) : "c-muted"}>
+                    {m.hasTx ? fmt(m.income) : "—"}
+                  </td>
+                  <td style={{ textAlign: "right" }} className="c-muted">{fmt(budgetExp)}</td>
+                  <td style={{ textAlign: "right" }} className={m.hasTx ? colorCls(getActualColor(m.expenses, budgetExp, "expense")) : "c-muted"}>
+                    {m.hasTx ? fmt(m.expenses) : "—"}
+                  </td>
+                  <td style={{ textAlign: "right" }} className="c-muted">{fmt(budgetSav)}</td>
+                  <td style={{ textAlign: "right" }} className={m.hasTx ? colorCls(getActualColor(m.savings, budgetSav, "savings")) : "c-muted"}>
+                    {m.hasTx ? fmt(m.savings) : "—"}
+                  </td>
+                  <td style={{ textAlign: "right" }} className={m.hasTx ? (m.surplus >= 0 ? "c-green" : "c-red") : "c-muted"}>
+                    {m.hasTx ? (m.surplus >= 0 ? fmt(m.surplus) : "−" + fmt(Math.abs(m.surplus))) : "—"}
+                  </td>
+                </tr>
+              );
+            })}
+            <tr className="tx-row total-row">
+              <td style={{ fontWeight: 600 }}>YTD</td>
+              <td style={{ textAlign: "right" }} className="c-muted">{fmt(budgetIncome * completed.length)}</td>
+              <td style={{ textAlign: "right", fontWeight: 500 }} className="c-green">{fmt(ytdIncome)}</td>
+              <td style={{ textAlign: "right" }} className="c-muted">{fmt(budgetExp * completed.length)}</td>
+              <td style={{ textAlign: "right", fontWeight: 500 }} className={ytdExp <= budgetExp * completed.length ? "c-green" : "c-red"}>{fmt(ytdExp)}</td>
+              <td style={{ textAlign: "right" }} className="c-muted">{fmt(budgetSav * completed.length)}</td>
+              <td style={{ textAlign: "right", fontWeight: 500 }} className="c-green">{fmt(ytdSav)}</td>
+              <td style={{ textAlign: "right", fontWeight: 500 }} className={ytdSurplus >= 0 ? "c-green" : "c-red"}>{fmt(ytdSurplus)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
