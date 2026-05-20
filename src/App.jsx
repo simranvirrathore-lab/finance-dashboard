@@ -36,16 +36,16 @@ const DEFAULT_CATEGORIES = {
     },
   ],
   expenses: [
-    { head: "Home",           subs: ["Rent", "Utilities"],                                                                                                          budget: { Rent: 3000, Utilities: 0 } },
-    { head: "Transportation", subs: ["Tesla Loan", "Tesla ICBC", "Van ICBC", "Gas", "Tesla App", "Rideshare", "Car Maintenance"],                                   budget: { "Tesla Loan": 644, "Tesla ICBC": 289, "Van ICBC": 180, Gas: 250, "Tesla App": 16, Rideshare: 0, "Car Maintenance": 0 } },
-    { head: "Family",         subs: ["Gurshaan School Fees", "Gurnadar Daycare", "Baby Supplies", "Kids Activities"],                                               budget: { "Gurshaan School Fees": 450, "Gurnadar Daycare": 850, "Baby Supplies": 100, "Kids Activities": 50 } },
-    { head: "Debt & Banking", subs: ["Student Loan", "Bank Fees"],                                                                                                  budget: { "Student Loan": 153, "Bank Fees": 17 } },
-    { head: "Food & Dining",  subs: ["Groceries", "Dining Out"],                                                                                                    budget: { Groceries: 1150, "Dining Out": 300 } },
-    { head: "Health",         subs: ["Pharmacy & Medical", "Wellness & Beauty", "YMCA"],                                                                            budget: { "Pharmacy & Medical": 100, "Wellness & Beauty": 60, YMCA: 54 } },
-    { head: "Shopping",       subs: ["Amazon Purchases", "Clothing", "Household / Dollarama"],                                                                      budget: { "Amazon Purchases": 150, Clothing: 150, "Household / Dollarama": 150 } },
-    { head: "Digital",        subs: ["Fido Mobile", "Telus Internet", "Apple / iCloud", "ChatGPT", "Amazon Prime", "Netflix", "Gmail"],                            budget: { "Fido Mobile": 104, "Telus Internet": 65, "Apple / iCloud": 35, ChatGPT: 25, "Amazon Prime": 10, Netflix: 9, Gmail: 2 } },
-    { head: "Charity",        subs: ["Charity / Donations"],                                                                                                        budget: { "Charity / Donations": 50 } },
-    { head: "Custom / Misc",  subs: ["Miscellaneous"],                                                                                                              budget: { Miscellaneous: 60 } },
+    { head: "Home",           subs: ["Rent", "Utilities"],                                                                                                                    budget: { Rent: 3000, Utilities: 0 } },
+    { head: "Transportation", subs: ["Tesla Loan", "Tesla ICBC", "Van ICBC", "ICBC Annual Renewal", "Gas", "Tesla App", "Rideshare", "Car Maintenance", "Parking"],           budget: { "Tesla Loan": 644, "Tesla ICBC": 289, "Van ICBC": 180, "ICBC Annual Renewal": 0, Gas: 250, "Tesla App": 16, Rideshare: 0, "Car Maintenance": 0, Parking: 0 } },
+    { head: "Family",         subs: ["Gurshaan School Fees", "Gurnadar Daycare", "Baby Supplies", "Kids Activities"],                                                         budget: { "Gurshaan School Fees": 450, "Gurnadar Daycare": 850, "Baby Supplies": 100, "Kids Activities": 50 } },
+    { head: "Debt & Banking", subs: ["Student Loan", "Bank Fees"],                                                                                                            budget: { "Student Loan": 153, "Bank Fees": 17 } },
+    { head: "Food & Dining",  subs: ["Groceries", "Dining Out"],                                                                                                              budget: { Groceries: 1150, "Dining Out": 300 } },
+    { head: "Health",         subs: ["Pharmacy & Medical", "Wellness & Beauty", "YMCA"],                                                                                      budget: { "Pharmacy & Medical": 100, "Wellness & Beauty": 60, YMCA: 54 } },
+    { head: "Shopping",       subs: ["Amazon Purchases", "Clothing", "Household / Dollarama"],                                                                                budget: { "Amazon Purchases": 150, Clothing: 150, "Household / Dollarama": 150 } },
+    { head: "Digital",        subs: ["Fido Mobile", "Telus Internet", "Apple / iCloud", "ChatGPT", "Amazon Prime", "Netflix", "Gmail"],                                      budget: { "Fido Mobile": 104, "Telus Internet": 65, "Apple / iCloud": 35, ChatGPT: 25, "Amazon Prime": 10, Netflix: 9, Gmail: 2 } },
+    { head: "Charity",        subs: ["Charity / Donations"],                                                                                                                  budget: { "Charity / Donations": 50 } },
+    { head: "Custom / Misc",  subs: ["Miscellaneous"],                                                                                                                        budget: { Miscellaneous: 60 } },
   ],
   savings: [
     { head: "SR FHSA",       budget: 650 },
@@ -63,12 +63,12 @@ const NR_SAVINGS_HEADS = ["NR FHSA", "NR RRSP", "Gurshaan RESP", "Gurnadar RESP"
 // ─── AUTO-CATEGORIZATION ─────────────────────────────────────────────────────
 
 function autoCategorize(description, subDescription, amount, accountId, merchantMemory = {}) {
-  const desc = (description    || "").toLowerCase().trim();
-  const sub  = (subDescription || "").toLowerCase().trim();
-  const abs  = Math.abs(amount);
+  const desc    = (description    || "").toLowerCase().trim();
+  const sub     = (subDescription || "").toLowerCase().trim();
+  const abs     = Math.abs(amount);
   const isCCAcct = ACCOUNTS.find(a => a.id === accountId)?.type === "cc";
 
-  // 1. Merchant memory — user-taught rules always win
+  // 1. Merchant memory — always wins
   if (merchantMemory[desc]) return merchantMemory[desc];
 
   // 2. MB-DEP — direct deposit
@@ -103,12 +103,11 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
     return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
   }
 
-  // 5. Insurance Corp of BC — bank only (monthly payments)
-  if (/insurance.corporation|icbc/i.test(sub) || /^insurance$/i.test(desc)) {
-    if (!isCCAcct)
-      return abs >= 220
-        ? { main: "Transportation", sub: "Tesla ICBC", section: "expenses" }
-        : { main: "Transportation", sub: "Van ICBC",   section: "expenses" };
+  // 5. Insurance Corp of BC — bank only (monthly)
+  if ((/insurance.corporation|icbc/i.test(sub) || /^insurance$/i.test(desc)) && !isCCAcct) {
+    return abs >= 220
+      ? { main: "Transportation", sub: "Tesla ICBC", section: "expenses" }
+      : { main: "Transportation", sub: "Van ICBC",   section: "expenses" };
   }
 
   // 6. Wealthsimple savings — by amount
@@ -134,17 +133,17 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
   const m = `${desc} ${sub}`;
 
   // ── Income ──
-  if (/canada.child|ccb.federal/i.test(m))    return { main: "Navneet Rathore", sub: "Canada Child Benefit", section: "income" };
+  if (/canada.child|ccb.federal/i.test(m)) return { main: "Navneet Rathore", sub: "Canada Child Benefit", section: "income" };
 
-  // ── ICBC on CC (annual payments — default Tesla, user can adjust) ──
-  if (/\bicbc\b/i.test(m) && isCCAcct)        return { main: "Transportation", sub: "Tesla ICBC",  section: "expenses" };
+  // ── ICBC on CC = annual renewal ──
+  if (/\bicbc\b/i.test(m) && isCCAcct) return { main: "Transportation", sub: "ICBC Annual Renewal", section: "expenses" };
   if (/\bicbc\b/i.test(m) && !isCCAcct)
     return abs >= 220
       ? { main: "Transportation", sub: "Tesla ICBC", section: "expenses" }
       : { main: "Transportation", sub: "Van ICBC",   section: "expenses" };
 
   // ── Groceries ──
-  if (/fruiticana|fruiticna/i.test(m))        return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/fruiticana|fruiticna|store.fruiticana/i.test(m)) return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
   if (/no.frills/i.test(m))                   return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
   if (/instacart|ic\*.insta|ic\*.costco/i.test(m)) return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
   if (/jeenkha.farms/i.test(m))               return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
@@ -169,7 +168,7 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
   if (/chimney.hill/i.test(m))                return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
   if (/tim.horton/i.test(m))                  return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
   if (/\bsubway\b/i.test(m))                  return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/\ba&w\b|a and w/i.test(m))             return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/\ba&w\b|a.and.w/i.test(m))             return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
   if (/mcdonald|burger.king|starbucks/i.test(m)) return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
   if (/burgrill/i.test(m))                    return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
   if (/shudh.vaishnu/i.test(m))               return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
@@ -177,11 +176,15 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
   if (/7.eleven|7eleven|seven.eleven/i.test(m)) return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
 
   // ── Transportation ──
-  if (/^uber$/i.test(desc) || /uber.canada\/ubertrip|uber.holdings|uber \*trip/i.test(m)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
+  // Uber refund (credit on CC) → Rideshare
+  if (/\buber\b/i.test(m) && amount > 0)      return { main: "Transportation", sub: "Rideshare", section: "expenses" };
+  if (/uber.canada\/ubertrip|uber.holdings|uber \*trip|uber.canada\/ubereats/i.test(m)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
+  if (/^uber$/i.test(desc) || /\buber\b/i.test(desc)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
   if (/^lyft$/i.test(desc) || /\blyft\b/i.test(desc)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
-  if (/abby.tires/i.test(m))                  return { main: "Transportation", sub: "Car Maintenance", section: "expenses" };
-  if (/costco.gas|gas.stn(?!\w)/i.test(m))    return { main: "Transportation", sub: "Gas",            section: "expenses" };
-  if (/tesla/i.test(m) && abs < 50)           return { main: "Transportation", sub: "Tesla App",      section: "expenses" };
+  if (/impark/i.test(m))                      return { main: "Transportation", sub: "Parking",          section: "expenses" };
+  if (/abby.tires/i.test(m))                  return { main: "Transportation", sub: "Car Maintenance",  section: "expenses" };
+  if (/costco.gas|gas.stn(?!\w)/i.test(m))    return { main: "Transportation", sub: "Gas",              section: "expenses" };
+  if (/tesla/i.test(m) && abs < 50)           return { main: "Transportation", sub: "Tesla App",        section: "expenses" };
 
   // ── Health ──
   if (/shoppers.drug|shoppers drug/i.test(m)) return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
@@ -190,6 +193,7 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
   if (/physiofirst|physiother/i.test(m))      return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
   if (/\bymca\b/i.test(m))                    return { main: "Health", sub: "YMCA",               section: "expenses" };
   if (/fade.factory|hv.fade|barbershop/i.test(m)) return { main: "Health", sub: "Wellness & Beauty", section: "expenses" };
+  if (/sq \*revere|revere.massage/i.test(m))  return { main: "Health", sub: "Wellness & Beauty", section: "expenses" };
 
   // ── Shopping ──
   if (/amazon.prime|amznprime/i.test(m))      return { main: "Digital",  sub: "Amazon Prime",          section: "expenses" };
@@ -202,6 +206,7 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
   if (/gap.outlet/i.test(m))                  return { main: "Shopping", sub: "Clothing",               section: "expenses" };
   if (/la.vie.en.rose/i.test(m))              return { main: "Shopping", sub: "Clothing",               section: "expenses" };
   if (/pastime.sports/i.test(m))              return { main: "Shopping", sub: "Clothing",               section: "expenses" };
+  if (/sport.chek|sportchek/i.test(m))        return { main: "Shopping", sub: "Clothing",               section: "expenses" };
 
   // ── Digital ──
   if (/\bfido\b/i.test(m))                    return { main: "Digital", sub: "Fido Mobile",    section: "expenses" };
@@ -409,6 +414,7 @@ export default function App() {
   const [merchantMemory,  setMerchantMemory]  = useState(() => load("rf_merchant_memory", {}));
   const [toast,           setToast]           = useState(null);
   const [dupPrompt,       setDupPrompt]       = useState(null);
+  const importRef = useRef();
 
   useEffect(() => { localStorage.setItem("rf_transactions",    JSON.stringify(transactions));    }, [transactions]);
   useEffect(() => { localStorage.setItem("rf_categories",      JSON.stringify(categories));      }, [categories]);
@@ -419,6 +425,55 @@ export default function App() {
   function showToast(msg, type = "info") { setToast({ msg, type }); setTimeout(() => setToast(null), 4000); }
   function prevMonth() { const [y,m]=selectedMonth.split("-").map(Number); setSelectedMonth(m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,"0")}`); }
   function nextMonth() { const [y,m]=selectedMonth.split("-").map(Number); setSelectedMonth(m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,"0")}`); }
+
+  // ── Export JSON ──
+  function handleExport() {
+    const data = {
+      transactions, categories, balances: accountBalances,
+      merchantMemory, investments,
+      exportDate: new Date().toISOString(),
+      version: "v6",
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `rathore-finance-${new Date().toISOString().split("T")[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Data exported successfully");
+  }
+
+  // ── Import JSON ──
+  function handleImportFile(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!window.confirm("This will replace ALL existing data. This cannot be undone. Continue?")) return;
+        if (data.transactions)    setTransactions(data.transactions);
+        if (data.categories)      setCategories(data.categories);
+        if (data.balances)        setAccountBalances(data.balances);
+        if (data.merchantMemory)  setMerchantMemory(data.merchantMemory);
+        if (data.investments)     setInvestments(data.investments);
+        showToast("Data imported successfully", "success");
+      } catch {
+        showToast("Invalid file — could not import", "error");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  // ── PDF Export ──
+  function handlePDF() {
+    const tabName = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+    const period  = activeTab === "annual" ? selectedYear : monthLabel(selectedMonth);
+    document.title = `Rathore Finance — ${tabName} — ${period}`;
+    window.print();
+    setTimeout(() => { document.title = "Rathore Family Finance Dashboard"; }, 2000);
+  }
 
   function handleImport(text, accountId) {
     const { transactions: newTxs, balanceInfo } = parseCSV(text, accountId, merchantMemory);
@@ -435,8 +490,8 @@ export default function App() {
 
   function commitImport(newTxs, accountId, months, balanceInfo, replace) {
     setTransactions(prev => {
-      const base = replace ? prev.filter(t => !(t.account===accountId && months.includes(t.month))) : prev;
-      const keys = new Set(base.map(t => `${t.date}|${t.description}|${t.amount}|${t.account}`));
+      const base  = replace ? prev.filter(t => !(t.account===accountId && months.includes(t.month))) : prev;
+      const keys  = new Set(base.map(t => `${t.date}|${t.description}|${t.amount}|${t.account}`));
       const toAdd = newTxs.filter(t => !keys.has(`${t.date}|${t.description}|${t.amount}|${t.account}`));
       const uncat = toAdd.filter(t => !t.mainCategory && !t.isTransfer).length;
       showToast(`${toAdd.length} imported · ${uncat} need review`);
@@ -511,7 +566,7 @@ export default function App() {
         </div>
       )}
 
-      <nav className="tab-bar">
+      <nav className="tab-bar no-print">
         {[
           { id:"overview",     label:"Overview",    icon:"⊞" },
           { id:"transactions", label:"Transactions", icon:"≡" },
@@ -524,6 +579,12 @@ export default function App() {
             {tab.id==="transactions" && uncatCount>0 && <span className="tab-badge">{uncatCount}</span>}
           </button>
         ))}
+        <div className="nav-actions no-print">
+          <button className="btn-ghost btn-sm" onClick={handleExport} title="Export all data as JSON">⬆ Export</button>
+          <button className="btn-ghost btn-sm" onClick={() => importRef.current.click()} title="Import data from JSON">⬇ Import</button>
+          <input ref={importRef} type="file" accept=".json" style={{display:"none"}} onChange={handleImportFile} />
+          <button className="btn-ghost btn-sm" onClick={handlePDF} title="Download PDF of current tab">⎙ PDF</button>
+        </div>
       </nav>
 
       <div className="tab-content">
@@ -557,11 +618,14 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
   const aIncome = sumActual("income");
   const aExp    = sumActual("expenses");
   const aSav    = sumActual("savings");
-  const unalloc = aIncome - aExp - aSav;
+  const netBal  = aIncome - aExp - aSav;
+
+  const srTxs = monthTxs.filter(t => t.account==="sr_scotia_bank");
+  const nrTxs = monthTxs.filter(t => t.account==="nr_scotia_bank");
 
   return (
     <div className="tab-pane">
-      <div className="month-bar">
+      <div className="month-bar no-print">
         <div className="month-nav">
           <button className="btn-ghost" onClick={onPrevMonth}>◀</button>
           <span className="month-label">{monthLabel(selectedMonth)}</span>
@@ -569,6 +633,7 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
         </div>
         <button className="btn-ghost btn-sm" onClick={onGoToTransactions}>⬆ Upload CSV</button>
       </div>
+      <div className="print-header">{monthLabel(selectedMonth)} — Overview</div>
 
       <div className="card">
         <div className="bank-header">
@@ -578,8 +643,8 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           <span className="col-hdr">Debits</span>
           <span className="col-hdr">Closing</span>
         </div>
-        <BankRow label="SR Scotia Bank" txs={monthTxs.filter(t=>t.account==="sr_scotia_bank")} balInfo={accountBalances[`sr_scotia_bank-${selectedMonth}`]} />
-        <BankRow label="NR Scotia Bank" txs={monthTxs.filter(t=>t.account==="nr_scotia_bank")} balInfo={accountBalances[`nr_scotia_bank-${selectedMonth}`]} isLast />
+        <BankRow label="SR Scotia Bank" txs={srTxs} balInfo={accountBalances[`sr_scotia_bank-${selectedMonth}`]} />
+        <BankRow label="NR Scotia Bank" txs={nrTxs} balInfo={accountBalances[`nr_scotia_bank-${selectedMonth}`]} isLast />
       </div>
 
       <div className="tiles-row">
@@ -587,8 +652,8 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
         <SummaryTile label="Total Expenses" budget={bExp}    actual={aExp}    type="expense" showBar />
         <SummaryTile label="Total Savings"  budget={bSav}    actual={aSav}    type="savings" />
         <div className="tile">
-          <div className="tile-label">Unallocated</div>
-          <div className={`tile-value ${unalloc>=0?"c-green":"c-red"}`}>{fmt(unalloc)}</div>
+          <div className="tile-label">Net Balance</div>
+          <div className={`tile-value ${netBal>=0?"c-green":"c-red"}`}>{fmt(netBal)}</div>
           <div className="tile-sub">Income − Expenses − Savings</div>
         </div>
       </div>
@@ -600,7 +665,6 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           <span className="acc-num-col hdr">Actual</span>
         </div>
 
-        {/* INCOME */}
         <div className="acc-section-row"><span className="acc-section-icon">↑</span><span className="acc-label-col acc-section-name">Income</span><span className="acc-num-col c-muted">{fmt(bIncome)}</span><span className={`acc-num-col ${colorCls(getActualColor(aIncome,bIncome,"income"))}`}>{aIncome>0?fmt(aIncome):"—"}</span></div>
         {categories.income.map(h => {
           const hB=Object.values(h.budget).reduce((a,b)=>a+b,0), hA=sumActual("income",h.head), k=`inc-${h.head}`;
@@ -620,7 +684,6 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           );
         })}
 
-        {/* EXPENSES */}
         <div className="acc-section-row"><span className="acc-section-icon">↓</span><span className="acc-label-col acc-section-name">Expenses</span><span className="acc-num-col c-muted">{fmt(bExp)}</span><span className={`acc-num-col ${colorCls(getActualColor(aExp,bExp,"expense"))}`}>{aExp>0?fmt(aExp):"—"}</span></div>
         {categories.expenses.map(h => {
           const hB=Object.values(h.budget).reduce((a,b)=>a+b,0), hA=counted.filter(t=>t.section==="expenses"&&t.mainCategory===h.head).reduce((s,t)=>s+Math.abs(t.amount),0), k=`exp-${h.head}`;
@@ -640,7 +703,6 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           );
         })}
 
-        {/* SAVINGS */}
         <div className="acc-section-row clickable" onClick={()=>setSavExp(s=>!s)}>
           <span className="acc-chev">{savExp?"▾":"▸"}</span><span className="acc-label-col acc-section-name">Savings</span>
           <span className="acc-num-col c-muted">{fmt(bSav)}</span>
@@ -651,7 +713,6 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           return (<div key={s.head} className="acc-item-row"><span className="acc-label-col acc-item-name">{s.head}</span><span className="acc-num-col c-muted">{s.budget>0?fmt(s.budget):"—"}</span><span className={`acc-num-col ${colorCls(getActualColor(sA,s.budget,"savings"))}`}>{sA>0?fmt(sA):"—"}</span></div>);
         })}
 
-        {/* TRANSFERS */}
         <div className="acc-section-row clickable dimmed" onClick={()=>setTfExp(s=>!s)}>
           <span className="acc-chev">{tfExp?"▾":"▸"}</span><span className="acc-label-col acc-section-name">Transfers — excluded from all calculations</span>
           <span className="acc-num-col">—</span><span className="acc-num-col">—</span>
@@ -714,12 +775,22 @@ function TransactionsTab({ transactions, categories, merchantMemory, selectedMon
     .filter(t => !search || t.description.toLowerCase().includes(search.toLowerCase()) || (t.mainCategory||"").toLowerCase().includes(search.toLowerCase()) || (t.subCategory||"").toLowerCase().includes(search.toLowerCase()) || (t.remarks||"").toLowerCase().includes(search.toLowerCase()))
     .sort((a,b) => new Date(b.date)-new Date(a.date));
 
-  // CC totals bar — only when filtering by a CC account
-  const isFilteredByCC = filterAccount && ACCOUNTS.find(a => a.id===filterAccount)?.type==="cc";
-  const ccNonTransfer  = isFilteredByCC ? filtered.filter(t => !t.isTransfer) : [];
-  const ccTotalSpent   = ccNonTransfer.filter(t => t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0);
-  const ccRefunds      = ccNonTransfer.filter(t => t.amount>0).reduce((s,t)=>s+t.amount,0);
-  const ccNet          = ccTotalSpent - ccRefunds;
+  // Determine account type for totals bar
+  const filteredAcct    = ACCOUNTS.find(a => a.id===filterAccount);
+  const isFilteredByCC  = filteredAcct?.type === "cc";
+  const isFilteredByBank= filteredAcct?.type === "bank";
+
+  // CC totals
+  const ccNonTransfer = isFilteredByCC ? filtered.filter(t => !t.isTransfer) : [];
+  const ccTotalSpent  = ccNonTransfer.filter(t=>t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0);
+  const ccRefunds     = ccNonTransfer.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const ccNet         = ccTotalSpent - ccRefunds;
+
+  // Bank totals
+  const bankTxs      = isFilteredByBank ? filtered : [];
+  const bankIncome   = bankTxs.filter(t => t.section==="income").reduce((s,t)=>s+Math.abs(t.amount),0);
+  const bankExpenses = bankTxs.filter(t => t.section==="expenses").reduce((s,t)=>s+Math.abs(t.amount),0);
+  const bankSavings  = bankTxs.filter(t => t.section==="savings").reduce((s,t)=>s+Math.abs(t.amount),0);
 
   const allMainCats = [
     ...categories.income.map(h   => ({ main:h.head, section:"income"   })),
@@ -766,14 +837,14 @@ function TransactionsTab({ transactions, categories, merchantMemory, selectedMon
   return (
     <div className="tab-pane">
       {bulkPrompt && (
-        <div className="bulk-bar">
+        <div className="bulk-bar no-print">
           <span>Apply <strong>{bulkPrompt.main} / {bulkPrompt.sub}</strong> to {bulkPrompt.count} similar transaction{bulkPrompt.count!==1?"s":""}?</span>
           <button className="btn-ghost btn-sm" onClick={()=>{onBulkReCategorize(bulkPrompt.description,bulkPrompt.main,bulkPrompt.sub,bulkPrompt.section);setBulkPrompt(null);}}>Apply All</button>
           <button className="btn-ghost btn-sm" onClick={()=>setBulkPrompt(null)}>Dismiss</button>
         </div>
       )}
 
-      <div className="month-bar">
+      <div className="month-bar no-print">
         <div className="month-nav">
           <button className="btn-ghost" onClick={onPrevMonth}>◀</button>
           <span className="month-label">{monthLabel(selectedMonth)}</span>
@@ -789,9 +860,11 @@ function TransactionsTab({ transactions, categories, merchantMemory, selectedMon
         </div>
       </div>
 
+      <div className="print-header">{monthLabel(selectedMonth)} — Transactions{filteredAcct ? ` — ${filteredAcct.label}` : ""}</div>
+
       {showCatMgr && <CategoryManager categories={categories} onChange={onCategoriesChange} onClose={()=>setShowCatMgr(false)} />}
 
-      <div className="filter-bar">
+      <div className="filter-bar no-print">
         <input className="inp" placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)} />
         <select className="sel" value={filterAccount} onChange={e=>setFilterAccount(e.target.value)}>
           <option value="">All accounts</option>
@@ -820,7 +893,7 @@ function TransactionsTab({ transactions, categories, merchantMemory, selectedMon
             <th style={{width:145}}>Main Category</th>
             <th style={{width:152}}>Sub Category</th>
             <th style={{width:140}}>Remarks</th>
-            <th style={{width:30}}></th>
+            <th style={{width:30}} className="no-print"></th>
           </tr></thead>
           <tbody>
             {filtered.length===0 && (
@@ -833,32 +906,52 @@ function TransactionsTab({ transactions, categories, merchantMemory, selectedMon
         </table>
       </div>
 
-      {/* CC Totals Bar — only visible when filtering by CC account */}
-      {isFilteredByCC && (
-        <div className="cc-totals-bar">
-          <div className="cc-totals-item">
-            <span className="cc-totals-label">Total Spent</span>
-            <span className="cc-totals-value c-red">{ccTotalSpent>0?fmt(ccTotalSpent):"—"}</span>
+      {/* Bank Account Totals Bar */}
+      {isFilteredByBank && (
+        <div className="acct-totals-bar">
+          <div className="acct-totals-item">
+            <span className="acct-totals-label">Net Income</span>
+            <span className="acct-totals-value c-green">{bankIncome>0?fmt(bankIncome):"—"}</span>
           </div>
-          <div className="cc-totals-sep" />
-          <div className="cc-totals-item">
-            <span className="cc-totals-label">Refunds</span>
-            <span className="cc-totals-value c-green">{ccRefunds>0?`+${fmt(ccRefunds)}`:"—"}</span>
+          <div className="acct-totals-sep" />
+          <div className="acct-totals-item">
+            <span className="acct-totals-label">Net Expenses</span>
+            <span className="acct-totals-value c-red">{bankExpenses>0?fmt(bankExpenses):"—"}</span>
           </div>
-          <div className="cc-totals-sep" />
-          <div className="cc-totals-item">
-            <span className="cc-totals-label">Net Spend</span>
-            <span className="cc-totals-value" style={{fontWeight:600}}>{fmt(ccNet)}</span>
-          </div>
-          <div className="cc-totals-sep" />
-          <div className="cc-totals-item">
-            <span className="cc-totals-label">Transactions</span>
-            <span className="cc-totals-value c-muted">{ccNonTransfer.length}</span>
+          <div className="acct-totals-sep" />
+          <div className="acct-totals-item">
+            <span className="acct-totals-label">Net Savings</span>
+            <span className="acct-totals-value c-green">{bankSavings>0?fmt(bankSavings):"—"}</span>
           </div>
         </div>
       )}
 
-      <div className="card data-mgmt">
+      {/* CC Totals Bar */}
+      {isFilteredByCC && (
+        <div className="acct-totals-bar">
+          <div className="acct-totals-item">
+            <span className="acct-totals-label">Total Spent</span>
+            <span className="acct-totals-value c-red">{ccTotalSpent>0?fmt(ccTotalSpent):"—"}</span>
+          </div>
+          <div className="acct-totals-sep" />
+          <div className="acct-totals-item">
+            <span className="acct-totals-label">Refunds</span>
+            <span className="acct-totals-value c-green">{ccRefunds>0?`+${fmt(ccRefunds)}`:"—"}</span>
+          </div>
+          <div className="acct-totals-sep" />
+          <div className="acct-totals-item">
+            <span className="acct-totals-label">Net Spend</span>
+            <span className="acct-totals-value" style={{fontWeight:600}}>{fmt(ccNet)}</span>
+          </div>
+          <div className="acct-totals-sep" />
+          <div className="acct-totals-item">
+            <span className="acct-totals-label">Transactions</span>
+            <span className="acct-totals-value c-muted">{ccNonTransfer.length}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="card data-mgmt no-print">
         <div className="data-mgmt-title">Data Management</div>
         <div className="data-mgmt-sub">Clear transaction data by month only. Individual rows deletable via ✕.</div>
         <div className="data-mgmt-row">
@@ -912,7 +1005,7 @@ function TransactionRow({ tx, allMainCats, getSubsFor, editingCell, setEditingCe
       <td>{isUncat&&!isEdit("mainCategory")?<span className="uncat-badge" onClick={()=>start("mainCategory")}>⚠ Uncategorized</span>:<CellSelect field="mainCategory" value={tx.mainCategory} options={allMainCats.map(c=>c.main)} onSelect={val=>onCellEdit(tx.id,"mainCategory",val)} />}</td>
       <td><CellSelect field="subCategory" value={tx.subCategory} options={getSubsFor(tx.mainCategory)} onSelect={val=>onCellEdit(tx.id,"subCategory",val)} /></td>
       <td><CellText field="remarks" value={tx.remarks} cls="remarks-val" /></td>
-      <td><button className="btn-del" onClick={()=>onDelete(tx.id)}>✕</button></td>
+      <td className="no-print"><button className="btn-del" onClick={()=>onDelete(tx.id)}>✕</button></td>
     </tr>
   );
 }
@@ -931,7 +1024,7 @@ function CategoryManager({ categories, onChange, onClose }) {
   const removeSub=(section,hi,si)=>setLocal(c=>{const u=JSON.parse(JSON.stringify(c));const sub=u[section][hi].subs[si];u[section][hi].subs.splice(si,1);delete u[section][hi].budget[sub];return u;});
 
   return (
-    <div className="cat-mgr card">
+    <div className="cat-mgr card no-print">
       <div className="cat-mgr-hdr"><span className="cat-mgr-title">⚙ Manage Categories</span><button className="btn-ghost btn-sm" onClick={onClose}>✕ Close</button></div>
       {["income","expenses","savings"].map(section=>(
         <div key={section} className="cat-section">
@@ -976,7 +1069,7 @@ function InvestmentsTab({ investments, onInvestmentsChange, showToast }) {
 
   return (
     <div className="tab-pane">
-      <div className="month-bar">
+      <div className="month-bar no-print">
         <span className="month-label">Wealthsimple Portfolio</span>
         <div className="top-actions">
           <select className="sel" value={uploadAccount} onChange={e=>setUploadAccount(e.target.value)}>{INVEST_ACCOUNTS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</select>
@@ -984,6 +1077,7 @@ function InvestmentsTab({ investments, onInvestmentsChange, showToast }) {
           <input ref={fileRef} type="file" accept=".csv" style={{display:"none"}} onChange={handleFile} />
         </div>
       </div>
+      <div className="print-header">Investments — Portfolio</div>
       <div className="inv-cards">
         {INVEST_ACCOUNTS.map(acc=>{
           const rows=grouped[acc.id]||[],book=rows.reduce((s,r)=>s+r.bookValue,0),mkt=rows.reduce((s,r)=>s+r.marketValue,0),gain=mkt-book,pct=book>0?((gain/book)*100).toFixed(1):"0.0";
@@ -1014,11 +1108,10 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
   const now   = new Date();
   const curMK = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
 
-  // Build data for each month
   const monthKeys = Array.from({length:12},(_,i)=>`${selectedYear}-${String(i+1).padStart(2,"0")}`);
 
   function monthData(key) {
-    const txs = transactions.filter(t => t.month===key && !t.isTransfer && t.mainCategory && t.section);
+    const txs     = transactions.filter(t => t.month===key && !t.isTransfer && t.mainCategory && t.section);
     const srIncome  = txs.filter(t=>t.section==="income"&&t.mainCategory==="Simranvir Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
     const nrIncome  = txs.filter(t=>t.section==="income"&&t.mainCategory==="Navneet Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
     const totIncome = srIncome+nrIncome;
@@ -1028,60 +1121,78 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
     const totSav    = srSav+nrSav;
     const srBal     = accountBalances[`sr_scotia_bank-${key}`] || null;
     const nrBal     = accountBalances[`nr_scotia_bank-${key}`] || null;
-    const totClose  = (srBal?.closing||0)+(nrBal?.closing||0);
     const hasTx     = transactions.some(t=>t.month===key);
-    return { srIncome, nrIncome, totIncome, totExp, srSav, nrSav, totSav, srBal, nrBal, totClose, hasTx };
+    return { srIncome, nrIncome, totIncome, totExp, srSav, nrSav, totSav, srBal, nrBal, hasTx };
   }
 
   const data = monthKeys.map(k => ({ key:k, ...monthData(k) }));
 
-  // YTD — months with data up to current month
-  const ytd     = data.filter(m=>m.hasTx&&m.key<=curMK);
+  // Row definitions — showTotal/showAvg control whether those columns are filled
+  const rows = [
+    { label:"SR Income",           section:"income",   getValue:m=>m.srIncome,        bold:false, showTotal:true,  showAvg:true  },
+    { label:"NR Income",           section:"income",   getValue:m=>m.nrIncome,        bold:false, showTotal:true,  showAvg:true  },
+    { label:"Total Income",        section:"income",   getValue:m=>m.totIncome,       bold:true,  showTotal:true,  showAvg:true  },
+    { label:"Total Expenses",      section:"expenses", getValue:m=>m.totExp,          bold:true,  showTotal:true,  showAvg:true  },
+    { label:"SR Savings",          section:"savings",  getValue:m=>m.srSav,           bold:false, showTotal:true,  showAvg:true  },
+    { label:"NR Savings",          section:"savings",  getValue:m=>m.nrSav,           bold:false, showTotal:true,  showAvg:true  },
+    { label:"Total Savings",       section:"savings",  getValue:m=>m.totSav,          bold:true,  showTotal:true,  showAvg:true  },
+    { label:"SR Opening Balance",  section:"balance",  getValue:m=>m.srBal?.opening,  bold:false, showTotal:false, showAvg:false },
+    { label:"SR Closing Balance",  section:"balance",  getValue:m=>m.srBal?.closing,  bold:false, showTotal:false, showAvg:false },
+    { label:"NR Opening Balance",  section:"balance",  getValue:m=>m.nrBal?.opening,  bold:false, showTotal:false, showAvg:false },
+    { label:"NR Closing Balance",  section:"balance",  getValue:m=>m.nrBal?.closing,  bold:false, showTotal:false, showAvg:false },
+    { label:"Total Final Balance", section:"balance",  getValue:m=>(m.srBal||m.nrBal)?(m.srBal?.closing||0)+(m.nrBal?.closing||0):null, bold:true, showTotal:false, showAvg:false },
+  ];
+
+  // Month-over-month change in Total Final Balance
+  const balanceChanges = monthKeys.map((key, i) => {
+    const curr = data[i];
+    if (!curr.srBal && !curr.nrBal) return null;
+    const currTotal = (curr.srBal?.closing||0) + (curr.nrBal?.closing||0);
+    if (i === 0) return null; // no previous month
+    // find closest previous month with balance data
+    let prev = null;
+    for (let j = i-1; j >= 0; j--) {
+      if (data[j].srBal || data[j].nrBal) { prev = data[j]; break; }
+    }
+    if (!prev) return null;
+    const prevTotal = (prev.srBal?.closing||0) + (prev.nrBal?.closing||0);
+    return currTotal - prevTotal;
+  });
+
+  // YTD
+  const ytd       = data.filter(m=>m.hasTx&&m.key<=curMK);
   const ytdSRInc  = ytd.reduce((s,m)=>s+m.srIncome,0);
   const ytdNRInc  = ytd.reduce((s,m)=>s+m.nrIncome,0);
   const ytdInc    = ytdSRInc+ytdNRInc;
   const ytdExp    = ytd.reduce((s,m)=>s+m.totExp,0);
   const ytdSRSav  = ytd.reduce((s,m)=>s+m.srSav,0);
   const ytdNRSav  = ytd.reduce((s,m)=>s+m.nrSav,0);
-  const ytdSav    = ytdSRSav+ytdNRSav;
-
-  // Latest closing balances
   const latestWithBal = [...data].reverse().find(m=>m.srBal||m.nrBal);
-  const latestSRClose = latestWithBal?.srBal?.closing||0;
-  const latestNRClose = latestWithBal?.nrBal?.closing||0;
+  const latestClose   = (latestWithBal?.srBal?.closing||0)+(latestWithBal?.nrBal?.closing||0);
 
-  // Annual row definitions
-  const rows = [
-    { label:"SR Income",           section:"income",   getValue:m=>m.srIncome,  bold:false },
-    { label:"NR Income",           section:"income",   getValue:m=>m.nrIncome,  bold:false },
-    { label:"Total Income",        section:"income",   getValue:m=>m.totIncome, bold:true  },
-    { label:"Total Expenses",      section:"expenses", getValue:m=>m.totExp,    bold:true  },
-    { label:"SR Savings",          section:"savings",  getValue:m=>m.srSav,     bold:false },
-    { label:"NR Savings",          section:"savings",  getValue:m=>m.nrSav,     bold:false },
-    { label:"Total Savings",       section:"savings",  getValue:m=>m.totSav,    bold:true  },
-    { label:"SR Opening Balance",  section:"balance",  getValue:m=>m.srBal?.opening, bold:false },
-    { label:"SR Closing Balance",  section:"balance",  getValue:m=>m.srBal?.closing, bold:false },
-    { label:"NR Opening Balance",  section:"balance",  getValue:m=>m.nrBal?.opening, bold:false },
-    { label:"NR Closing Balance",  section:"balance",  getValue:m=>m.nrBal?.closing, bold:false },
-    { label:"Total Final Balance", section:"balance",  getValue:m=>(m.srBal||m.nrBal)?(m.srBal?.closing||0)+(m.nrBal?.closing||0):null, bold:true },
-  ];
+  // Helper to compute total and average for a row
+  function rowStats(row) {
+    const vals  = data.filter(m=>m.hasTx).map(m=>row.getValue(m)).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+    const total = vals.reduce((s,v)=>s+v,0);
+    const avg   = vals.length>0 ? Math.round(total/vals.length) : null;
+    return { total, avg, count: vals.length };
+  }
 
-  const sectionColors = { income:"ann-income", expenses:"ann-expenses", savings:"ann-savings", balance:"ann-balance" };
-  const sectionLabels = { income:"Income", expenses:"Expenses", savings:"Saving", balance:"Net Balance" };
-
-  let prevSection = null;
+  const sectionColors  = { income:"ann-income", expenses:"ann-expenses", savings:"ann-savings", balance:"ann-balance" };
+  const sectionLabels  = { income:"Income", expenses:"Expenses", savings:"Saving", balance:"Net Balance" };
+  let prevSection      = null;
 
   return (
     <div className="tab-pane">
-      <div className="month-bar">
+      <div className="month-bar no-print">
         <div className="month-nav">
           <button className="btn-ghost" onClick={onPrevYear}>◀</button>
           <span className="month-label">{selectedYear}</span>
           <button className="btn-ghost" onClick={onNextYear}>▶</button>
         </div>
       </div>
+      <div className="print-header">{selectedYear} — Annual Summary</div>
 
-      {/* YTD tiles */}
       <div className="tiles-row">
         <div className="tile"><div className="tile-label">YTD SR Income</div>  <div className="tile-value c-green">{fmt(ytdSRInc)}</div></div>
         <div className="tile"><div className="tile-label">YTD NR Income</div>  <div className="tile-value c-green">{fmt(ytdNRInc)}</div></div>
@@ -1089,26 +1200,20 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
         <div className="tile"><div className="tile-label">YTD Expenses</div>   <div className="tile-value c-red">{fmt(ytdExp)}</div></div>
         <div className="tile"><div className="tile-label">YTD SR Savings</div> <div className="tile-value c-green">{fmt(ytdSRSav)}</div></div>
         <div className="tile"><div className="tile-label">YTD NR Savings</div> <div className="tile-value c-green">{fmt(ytdNRSav)}</div></div>
-        <div className="tile"><div className="tile-label">Latest Closing</div>  <div className="tile-value" style={{fontWeight:700}}>{fmt(latestSRClose+latestNRClose)}</div><div className="tile-sub">SR {fmt(latestSRClose)} · NR {fmt(latestNRClose)}</div></div>
+        <div className="tile"><div className="tile-label">Latest Balance</div>  <div className="tile-value" style={{fontWeight:700}}>{fmt(latestClose)}</div><div className="tile-sub">{latestWithBal ? `SR ${fmt(latestWithBal.srBal?.closing||0)} · NR ${fmt(latestWithBal.nrBal?.closing||0)}` : "—"}</div></div>
       </div>
 
-      {/* Annual table — categories as rows, months as columns */}
       <div className="table-wrap card annual-pivot-wrap">
         <table className="tx-tbl annual-pivot">
           <thead>
             <tr>
               <th className="ann-sticky-col" style={{textAlign:"left"}}>Category</th>
               {MONTH_NAMES.map((mn,i) => {
-                const key=monthKeys[i];
-                const isCur=key===curMK;
-                const isFut=key>curMK&&!data[i].hasTx;
-                return (
-                  <th key={mn} style={{textAlign:"right",minWidth:72}} className={isCur?"ann-cur-col":isFut?"ann-fut-col":""}>
-                    {mn}{isCur&&<span className="current-dot"> ●</span>}
-                  </th>
-                );
+                const key=monthKeys[i], isCur=key===curMK, isFut=key>curMK&&!data[i].hasTx;
+                return <th key={mn} style={{textAlign:"right",minWidth:72}} className={isCur?"ann-cur-col":isFut?"ann-fut-col":""}>{mn}{isCur&&<span className="current-dot"> ●</span>}</th>;
               })}
               <th style={{textAlign:"right",minWidth:80}}>Total</th>
+              <th style={{textAlign:"right",minWidth:80}}>Avg/mo</th>
             </tr>
           </thead>
           <tbody>
@@ -1116,39 +1221,78 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
               const showSectionHeader = row.section !== prevSection;
               prevSection = row.section;
               const sectionCls = sectionColors[row.section]||"";
-              const rowTotal = data.filter(m=>m.hasTx).reduce((s,m)=>{const v=row.getValue(m);return s+(v||0);},0);
+              const { total, avg } = rowStats(row);
 
               return [
                 showSectionHeader && (
                   <tr key={`sec-${row.section}`} className={`ann-section-hdr ${sectionCls}`}>
-                    <td colSpan={14} className="ann-sticky-col ann-section-label">{sectionLabels[row.section]}</td>
+                    <td colSpan={15} className="ann-sticky-col ann-section-label">{sectionLabels[row.section]}</td>
                   </tr>
                 ),
                 <tr key={ri} className={`tx-row ann-data-row ${sectionCls}`}>
                   <td className={`ann-sticky-col ann-row-label${row.bold?" ann-bold":""}`}>{row.label}</td>
                   {data.map((m,mi) => {
-                    const val    = row.getValue(m);
-                    const isCur  = m.key===curMK;
-                    const isFut  = m.key>curMK&&!m.hasTx;
-                    const hasVal = val !== null && val !== undefined && !isNaN(val);
+                    const val   = row.getValue(m);
+                    const isCur = m.key===curMK;
+                    const isFut = m.key>curMK&&!m.hasTx;
+                    const hasVal= val!==null && val!==undefined && !isNaN(val) && (m.hasTx || row.section==="balance");
                     return (
-                      <td key={mi} style={{textAlign:"right"}} className={`${isFut?"ann-fut-col":""}`}>
-                        {hasVal && m.hasTx
+                      <td key={mi} style={{textAlign:"right"}} className={isFut?"ann-fut-col":""}>
+                        {hasVal
                           ? <span className={`${row.bold?"ann-bold":""} ${isCur?"ann-cur-val":""}`}>{fmt(val)}</span>
                           : <span className="c-muted">—</span>
                         }
                       </td>
                     );
                   })}
+                  {/* Total column */}
                   <td style={{textAlign:"right"}}>
-                    {rowTotal>0
-                      ? <span className={row.bold?"ann-bold":""}>{fmt(rowTotal)}</span>
+                    {row.showTotal && total>0
+                      ? <span className={row.bold?"ann-bold":""}>{fmt(total)}</span>
+                      : <span className="c-muted">—</span>
+                    }
+                  </td>
+                  {/* Average column */}
+                  <td style={{textAlign:"right"}}>
+                    {row.showAvg && avg!==null && avg>0
+                      ? <span className="c-muted">{fmt(avg)}</span>
                       : <span className="c-muted">—</span>
                     }
                   </td>
                 </tr>
               ];
             })}
+
+            {/* Change in Balance row */}
+            <tr className="ann-section-hdr ann-balance">
+              <td colSpan={15} className="ann-sticky-col ann-section-label">Change in Balance</td>
+            </tr>
+            <tr className="tx-row ann-data-row ann-balance">
+              <td className="ann-sticky-col ann-row-label ann-bold">Month-over-Month</td>
+              {balanceChanges.map((change, i) => {
+                const isCur = monthKeys[i]===curMK;
+                const isFut = monthKeys[i]>curMK&&!data[i].hasTx;
+                return (
+                  <td key={i} style={{textAlign:"right"}} className={isFut?"ann-fut-col":""}>
+                    {change!==null
+                      ? <span className={`ann-bold ${isCur?"ann-cur-val":""} ${change>=0?"c-green":"c-red"}`}>
+                          {change>=0?"+":""}{fmt(Math.abs(change))}
+                        </span>
+                      : <span className="c-muted">—</span>
+                    }
+                  </td>
+                );
+              })}
+              <td style={{textAlign:"right"}} className="c-muted">—</td>
+              <td style={{textAlign:"right"}}>
+                {(() => {
+                  const validChanges = balanceChanges.filter(c=>c!==null);
+                  if (validChanges.length===0) return <span className="c-muted">—</span>;
+                  const avg = Math.round(validChanges.reduce((s,c)=>s+c,0)/validChanges.length);
+                  return <span className={`c-muted`}>{avg>=0?"+":""}{fmt(Math.abs(avg))}</span>;
+                })()}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>

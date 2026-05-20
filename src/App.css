@@ -24,16 +24,14 @@
   --font: 'Syne', sans-serif;
   --mono: 'DM Mono', monospace;
 
-  /* Annual section colors */
-  --ann-income:   rgba(96, 148, 250, 0.07);
-  --ann-expenses: rgba(255, 107, 107, 0.07);
-  --ann-savings:  rgba(61, 220, 132, 0.07);
-  --ann-balance:  rgba(180, 180, 200, 0.06);
-
-  --ann-income-hdr:   rgba(96, 148, 250, 0.18);
-  --ann-expenses-hdr: rgba(255, 107, 107, 0.18);
-  --ann-savings-hdr:  rgba(61, 220, 132, 0.18);
-  --ann-balance-hdr:  rgba(180, 180, 200, 0.14);
+  --ann-income:       rgba(96,148,250,0.07);
+  --ann-expenses:     rgba(255,107,107,0.07);
+  --ann-savings:      rgba(61,220,132,0.07);
+  --ann-balance:      rgba(180,180,200,0.06);
+  --ann-income-hdr:   rgba(96,148,250,0.18);
+  --ann-expenses-hdr: rgba(255,107,107,0.18);
+  --ann-savings-hdr:  rgba(61,220,132,0.18);
+  --ann-balance-hdr:  rgba(180,180,200,0.14);
 }
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
@@ -44,12 +42,15 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .tab-content { flex:1; max-width:1200px; width:100%; margin:0 auto; padding:0 16px 48px; }
 
 /* TAB BAR */
-.tab-bar { display:flex; gap:2px; padding:12px 24px 0; border-bottom:1px solid var(--border); background:var(--bg); position:sticky; top:0; z-index:50; max-width:1200px; margin:0 auto; width:100%; }
-.tab-btn { display:flex; align-items:center; gap:6px; padding:9px 16px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:13px; font-weight:500; color:var(--text2); letter-spacing:.02em; position:relative; transition:color .15s,border-color .15s; margin-bottom:-1px; }
+.tab-bar { display:flex; align-items:center; gap:2px; padding:12px 24px 0; border-bottom:1px solid var(--border); background:var(--bg); position:sticky; top:0; z-index:50; max-width:1200px; margin:0 auto; width:100%; }
+.tab-btn { display:flex; align-items:center; gap:6px; padding:9px 16px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:13px; font-weight:500; color:var(--text2); letter-spacing:.02em; transition:color .15s,border-color .15s; margin-bottom:-1px; white-space:nowrap; }
 .tab-btn:hover { color:var(--text); }
 .tab-btn.active { color:var(--text); border-bottom-color:var(--accent); }
 .tab-icon { font-size:14px; }
 .tab-badge { background:var(--red); color:#fff; font-size:10px; font-weight:600; padding:1px 5px; border-radius:99px; font-family:var(--mono); margin-left:2px; }
+
+/* Nav actions */
+.nav-actions { margin-left:auto; display:flex; align-items:center; gap:6px; padding-bottom:1px; }
 
 /* TAB PANE */
 .tab-pane { padding-top:20px; display:flex; flex-direction:column; gap:12px; }
@@ -70,7 +71,7 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .btn-ghost.btn-sm { padding:5px 10px; font-size:12px; }
 .btn-primary { background:var(--accent); border:1px solid var(--accent); border-radius:var(--radius-sm); padding:7px 16px; color:#fff; cursor:pointer; font-size:13px; font-weight:500; transition:background .15s; }
 .btn-primary:hover { background:var(--accent2); }
-.btn-danger { background:transparent; border:1px solid var(--red); border-radius:var(--radius-sm); padding:6px 12px; color:var(--red); cursor:pointer; font-size:12px; transition:background .15s; }
+.btn-danger { background:transparent; border:1px solid var(--red); border-radius:var(--radius-sm); padding:6px 12px; color:var(--red); cursor:pointer; font-size:12px; }
 .btn-danger:hover { background:rgba(255,107,107,.1); }
 .btn-danger:disabled { opacity:.4; cursor:not-allowed; }
 .btn-del { background:none; border:none; cursor:pointer; color:var(--text3); font-size:13px; padding:2px 4px; border-radius:4px; transition:color .15s; line-height:1; }
@@ -118,7 +119,6 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .acc-num-col     { min-width:100px; text-align:right; font-family:var(--mono); font-size:13px; flex-shrink:0; }
 .acc-num-col.hdr { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:var(--text3); font-family:var(--font); }
 .acc-section-row { display:flex; align-items:center; gap:8px; padding:9px 16px; background:var(--bg3); border-top:1px solid var(--border); }
-.acc-section-row:first-child { border-top:none; }
 .acc-section-row.clickable   { cursor:pointer; }
 .acc-section-row.clickable:hover { background:var(--bg4); }
 .acc-section-row.dimmed      { opacity:.5; }
@@ -163,12 +163,12 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .uncat-badge:hover { background:rgba(255,107,107,.18); }
 .empty-cell { text-align:center; color:var(--text3); padding:40px 20px; font-size:13px; }
 
-/* CC TOTALS BAR */
-.cc-totals-bar { display:flex; align-items:center; gap:0; background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius); overflow:hidden; }
-.cc-totals-item { display:flex; flex-direction:column; align-items:center; padding:14px 24px; flex:1; }
-.cc-totals-sep  { width:1px; height:40px; background:var(--border2); flex-shrink:0; }
-.cc-totals-label{ font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--text2); font-weight:500; margin-bottom:5px; }
-.cc-totals-value{ font-size:20px; font-weight:700; font-family:var(--mono); letter-spacing:-.02em; }
+/* ACCOUNT TOTALS BAR (Bank + CC) */
+.acct-totals-bar { display:flex; align-items:center; background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius); overflow:hidden; }
+.acct-totals-item { display:flex; flex-direction:column; align-items:center; padding:14px 24px; flex:1; }
+.acct-totals-sep  { width:1px; height:40px; background:var(--border2); flex-shrink:0; }
+.acct-totals-label{ font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--text2); font-weight:500; margin-bottom:5px; }
+.acct-totals-value{ font-size:20px; font-weight:700; font-family:var(--mono); letter-spacing:-.02em; }
 
 /* BULK BAR */
 .bulk-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:rgba(96,165,250,.07); border:1px solid rgba(96,165,250,.25); border-radius:var(--radius); padding:10px 14px; font-size:13px; }
@@ -177,7 +177,7 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 /* CATEGORY MANAGER */
 .cat-mgr { padding:0; }
 .cat-mgr-hdr { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:8px; }
-.cat-mgr-title { font-size:12px; font-weight:600; color:var(--text2); letter-spacing:.02em; }
+.cat-mgr-title { font-size:12px; font-weight:600; color:var(--text2); }
 .cat-section { padding:14px 16px; border-bottom:1px solid var(--border); }
 .cat-section-lbl { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--text3); margin-bottom:10px; }
 .cat-head-block { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:8px; overflow:hidden; }
@@ -206,36 +206,27 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .annual-pivot { width:100%; border-collapse:collapse; font-size:12px; min-width:900px; }
 .annual-pivot th { padding:8px 10px; text-align:right; font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:var(--text3); border-bottom:1px solid var(--border); background:var(--bg3); white-space:nowrap; }
 .annual-pivot td { padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle; font-family:var(--mono); font-size:12px; }
-
-/* Sticky first column */
 .ann-sticky-col { position:sticky; left:0; background:var(--bg2); z-index:2; text-align:left !important; font-family:var(--font) !important; font-size:12px; min-width:160px; white-space:nowrap; }
 .annual-pivot th.ann-sticky-col { background:var(--bg3); z-index:3; }
-
-/* Section headers */
 .ann-section-hdr td { padding:5px 10px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
 .ann-section-label { font-family:var(--font) !important; }
-
-/* Section colors */
 .ann-income   { background:var(--ann-income);   }
 .ann-expenses { background:var(--ann-expenses);  }
 .ann-savings  { background:var(--ann-savings);   }
 .ann-balance  { background:var(--ann-balance);   }
-
 .ann-section-hdr.ann-income   { background:var(--ann-income-hdr);   }
 .ann-section-hdr.ann-expenses { background:var(--ann-expenses-hdr); }
 .ann-section-hdr.ann-savings  { background:var(--ann-savings-hdr);  }
 .ann-section-hdr.ann-balance  { background:var(--ann-balance-hdr);  }
-
 .ann-income   .ann-sticky-col { background:var(--ann-income);   }
 .ann-expenses .ann-sticky-col { background:var(--ann-expenses);  }
 .ann-savings  .ann-sticky-col { background:var(--ann-savings);   }
 .ann-balance  .ann-sticky-col { background:var(--ann-balance);   }
-
 .ann-row-label { color:var(--text2); }
-.ann-bold      { font-weight:600 !important; color:var(--text) !important; }
-.ann-cur-col   { background:rgba(124,106,240,.08) !important; }
-.ann-fut-col   { opacity:.4; }
-.ann-cur-val   { color:var(--accent) !important; }
+.ann-bold  { font-weight:600 !important; color:var(--text) !important; }
+.ann-cur-col { background:rgba(124,106,240,.08) !important; }
+.ann-fut-col { opacity:.4; }
+.ann-cur-val { color:var(--accent) !important; }
 .ann-data-row:hover td { filter:brightness(1.08); }
 
 /* DATA MANAGEMENT */
@@ -251,7 +242,7 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .toast-error   { border-left:3px solid var(--red);   }
 @keyframes toast-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
-/* DUPLICATE MODAL */
+/* DUP MODAL */
 .dup-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:200; }
 .dup-modal { background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:24px; max-width:460px; width:90%; }
 .dup-title { font-size:16px; font-weight:600; margin-bottom:12px; }
@@ -268,6 +259,94 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 ::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:3px; }
 ::-webkit-scrollbar-thumb:hover { background:var(--border3); }
 
+/* PRINT HEADER — shown only when printing */
+.print-header { display:none; }
+
+/* ─── PRINT / PDF ─────────────────────────────────────────────────────────── */
+@media print {
+  :root {
+    --bg:     #ffffff;
+    --bg2:    #ffffff;
+    --bg3:    #f5f5f7;
+    --bg4:    #ebebef;
+    --border: rgba(0,0,0,0.1);
+    --border2:rgba(0,0,0,0.15);
+    --text:   #111111;
+    --text2:  #444444;
+    --text3:  #888888;
+    --green:  #1a7a3e;
+    --red:    #c0392b;
+    --amber:  #b7760d;
+    --accent: #5548c8;
+  }
+
+  body { background:#fff; color:#111; }
+
+  /* Hide interactive elements */
+  .no-print,
+  .tab-bar,
+  .month-bar,
+  .filter-bar,
+  .data-mgmt,
+  .bulk-bar,
+  .cat-mgr,
+  .dup-overlay,
+  .toast,
+  .btn-del,
+  .btn-ghost,
+  .btn-primary,
+  .btn-danger,
+  .nav-actions,
+  .tab-badge { display:none !important; }
+
+  /* Show print header */
+  .print-header { display:block; font-size:16px; font-weight:700; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #111; font-family:var(--font); }
+
+  /* Layout */
+  .app-root { min-height:unset; }
+  .tab-content { max-width:100%; padding:0 8px; }
+  .tab-pane { gap:8px; padding-top:0; }
+
+  /* Cards */
+  .card { border:1px solid #ccc; border-radius:4px; }
+
+  /* Tables */
+  .tx-tbl th { background:#f0f0f0; color:#333; border-bottom:1px solid #ccc; }
+  .tx-tbl td { border-bottom:1px solid #eee; }
+  .table-wrap { overflow-x:visible; }
+
+  /* Annual pivot */
+  .annual-pivot-wrap { overflow-x:visible; }
+  .ann-sticky-col { position:static; background:transparent !important; }
+  .ann-section-hdr.ann-income   { background:#dbeafe !important; }
+  .ann-section-hdr.ann-expenses { background:#fee2e2 !important; }
+  .ann-section-hdr.ann-savings  { background:#dcfce7 !important; }
+  .ann-section-hdr.ann-balance  { background:#f1f5f9 !important; }
+  .ann-income   { background:#eff6ff !important; }
+  .ann-expenses { background:#fff5f5 !important; }
+  .ann-savings  { background:#f0fff4 !important; }
+  .ann-balance  { background:#f8fafc !important; }
+  .ann-fut-col  { opacity:.6; }
+  .ann-cur-col  { background:#ede9fe !important; }
+
+  /* Tiles */
+  .tiles-row { flex-wrap:wrap; gap:6px; }
+  .tile { border:1px solid #ccc; min-width:120px; padding:10px 12px; }
+  .tile-value { font-size:16px; }
+
+  /* Acct totals bar */
+  .acct-totals-bar { border:1px solid #ccc; }
+
+  /* Page breaks */
+  .card { page-break-inside:avoid; }
+  .tiles-row { page-break-inside:avoid; }
+
+  @page {
+    size: A4 landscape;
+    margin: 15mm 10mm;
+  }
+}
+
 /* RESPONSIVE */
 @media (max-width:700px) {
   .tab-bar { padding:10px 12px 0; gap:0; }
@@ -278,6 +357,8 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
   .tile-value { font-size:18px; }
   .tab-content { padding:0 10px 32px; }
   .filter-bar .inp { width:140px; }
-  .cc-totals-item { padding:12px 14px; }
-  .cc-totals-value { font-size:16px; }
+  .acct-totals-item { padding:12px 14px; }
+  .acct-totals-value { font-size:16px; }
+  .nav-actions { gap:4px; }
+  .nav-actions .btn-ghost { padding:4px 8px; font-size:11px; }
 }
