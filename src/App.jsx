@@ -4,20 +4,20 @@ import "./App.css";
 // ─── ACCOUNTS ────────────────────────────────────────────────────────────────
 
 const ACCOUNTS = [
-  { id: "sr_scotia_bank", label: "SR Scotia Bank",                     type: "bank" },
-  { id: "nr_scotia_bank", label: "NR Scotia Bank",                     type: "bank" },
-  { id: "sr_scotia_visa", label: "SR Scotia Momentum Infinite Visa",   type: "cc"   },
-  { id: "sr_cibc_mc",     label: "SR CIBC Costco Mastercard",          type: "cc"   },
-  { id: "sr_tangerine",   label: "SR Tangerine",                       type: "cc"   },
+  { id: "sr_scotia_bank", label: "SR Scotia Bank",                   type: "bank" },
+  { id: "nr_scotia_bank", label: "NR Scotia Bank",                   type: "bank" },
+  { id: "sr_scotia_visa", label: "SR Scotia Momentum Infinite Visa", type: "cc"   },
+  { id: "sr_cibc_mc",     label: "SR CIBC Costco Mastercard",        type: "cc"   },
+  { id: "sr_tangerine",   label: "SR Tangerine",                     type: "cc"   },
 ];
 
 const INVEST_ACCOUNTS = [
-  { id: "sr_fhsa",       label: "SR FHSA"          },
-  { id: "sr_tfsa",       label: "SR TFSA"          },
-  { id: "resp_gurshaan", label: "RESP — Gurshaan"  },
-  { id: "resp_gurnadar", label: "RESP — Gurnadar"  },
-  { id: "nr_fhsa",       label: "NR FHSA"          },
-  { id: "nr_rrsp",       label: "NR RRSP"          },
+  { id: "sr_fhsa",       label: "SR FHSA"         },
+  { id: "sr_tfsa",       label: "SR TFSA"         },
+  { id: "resp_gurshaan", label: "RESP — Gurshaan" },
+  { id: "resp_gurnadar", label: "RESP — Gurnadar" },
+  { id: "nr_fhsa",       label: "NR FHSA"         },
+  { id: "nr_rrsp",       label: "NR RRSP"         },
 ];
 
 // ─── DEFAULT CATEGORIES ──────────────────────────────────────────────────────
@@ -36,16 +36,16 @@ const DEFAULT_CATEGORIES = {
     },
   ],
   expenses: [
-    { head: "Home",           subs: ["Rent", "Utilities"],                                                                                              budget: { Rent: 3000, Utilities: 0 } },
-    { head: "Transportation", subs: ["Tesla Loan", "Tesla ICBC", "Van ICBC", "Gas", "Tesla App", "Rideshare"],                                          budget: { "Tesla Loan": 644, "Tesla ICBC": 289, "Van ICBC": 180, Gas: 250, "Tesla App": 16, Rideshare: 0 } },
-    { head: "Family",         subs: ["Gurshaan School Fees", "Gurnadar Daycare", "Baby Supplies", "Kids Activities"],                                   budget: { "Gurshaan School Fees": 450, "Gurnadar Daycare": 850, "Baby Supplies": 100, "Kids Activities": 50 } },
-    { head: "Debt & Banking", subs: ["Student Loan", "Bank Fees"],                                                                                      budget: { "Student Loan": 153, "Bank Fees": 17 } },
-    { head: "Food & Dining",  subs: ["Groceries", "Dining Out"],                                                                                        budget: { Groceries: 1150, "Dining Out": 300 } },
-    { head: "Health",         subs: ["Pharmacy & Medical", "Wellness & Beauty", "YMCA"],                                                                budget: { "Pharmacy & Medical": 100, "Wellness & Beauty": 60, YMCA: 54 } },
-    { head: "Shopping",       subs: ["Amazon Purchases", "Clothing", "Household / Dollarama"],                                                          budget: { "Amazon Purchases": 150, Clothing: 150, "Household / Dollarama": 150 } },
-    { head: "Digital",        subs: ["Fido Mobile", "Telus Internet", "Apple / iCloud", "ChatGPT", "Amazon Prime", "Netflix", "Gmail"],                budget: { "Fido Mobile": 104, "Telus Internet": 65, "Apple / iCloud": 35, ChatGPT: 25, "Amazon Prime": 10, Netflix: 9, Gmail: 2 } },
-    { head: "Charity",        subs: ["Charity / Donations"],                                                                                            budget: { "Charity / Donations": 50 } },
-    { head: "Custom / Misc",  subs: ["Miscellaneous"],                                                                                                  budget: { Miscellaneous: 60 } },
+    { head: "Home",           subs: ["Rent", "Utilities"],                                                                                                          budget: { Rent: 3000, Utilities: 0 } },
+    { head: "Transportation", subs: ["Tesla Loan", "Tesla ICBC", "Van ICBC", "Gas", "Tesla App", "Rideshare", "Car Maintenance"],                                   budget: { "Tesla Loan": 644, "Tesla ICBC": 289, "Van ICBC": 180, Gas: 250, "Tesla App": 16, Rideshare: 0, "Car Maintenance": 0 } },
+    { head: "Family",         subs: ["Gurshaan School Fees", "Gurnadar Daycare", "Baby Supplies", "Kids Activities"],                                               budget: { "Gurshaan School Fees": 450, "Gurnadar Daycare": 850, "Baby Supplies": 100, "Kids Activities": 50 } },
+    { head: "Debt & Banking", subs: ["Student Loan", "Bank Fees"],                                                                                                  budget: { "Student Loan": 153, "Bank Fees": 17 } },
+    { head: "Food & Dining",  subs: ["Groceries", "Dining Out"],                                                                                                    budget: { Groceries: 1150, "Dining Out": 300 } },
+    { head: "Health",         subs: ["Pharmacy & Medical", "Wellness & Beauty", "YMCA"],                                                                            budget: { "Pharmacy & Medical": 100, "Wellness & Beauty": 60, YMCA: 54 } },
+    { head: "Shopping",       subs: ["Amazon Purchases", "Clothing", "Household / Dollarama"],                                                                      budget: { "Amazon Purchases": 150, Clothing: 150, "Household / Dollarama": 150 } },
+    { head: "Digital",        subs: ["Fido Mobile", "Telus Internet", "Apple / iCloud", "ChatGPT", "Amazon Prime", "Netflix", "Gmail"],                            budget: { "Fido Mobile": 104, "Telus Internet": 65, "Apple / iCloud": 35, ChatGPT: 25, "Amazon Prime": 10, Netflix: 9, Gmail: 2 } },
+    { head: "Charity",        subs: ["Charity / Donations"],                                                                                                        budget: { "Charity / Donations": 50 } },
+    { head: "Custom / Misc",  subs: ["Miscellaneous"],                                                                                                              budget: { Miscellaneous: 60 } },
   ],
   savings: [
     { head: "SR FHSA",       budget: 650 },
@@ -57,18 +57,21 @@ const DEFAULT_CATEGORIES = {
   ],
 };
 
+const SR_SAVINGS_HEADS = ["SR FHSA", "SR TFSA"];
+const NR_SAVINGS_HEADS = ["NR FHSA", "NR RRSP", "Gurshaan RESP", "Gurnadar RESP"];
+
 // ─── AUTO-CATEGORIZATION ─────────────────────────────────────────────────────
 
 function autoCategorize(description, subDescription, amount, accountId, merchantMemory = {}) {
-  const desc    = (description    || "").toLowerCase().trim();
-  const sub     = (subDescription || "").toLowerCase().trim();
-  const abs     = Math.abs(amount);
-  const isCC    = ACCOUNTS.find(a => a.id === accountId)?.type === "cc";
+  const desc = (description    || "").toLowerCase().trim();
+  const sub  = (subDescription || "").toLowerCase().trim();
+  const abs  = Math.abs(amount);
+  const isCCAcct = ACCOUNTS.find(a => a.id === accountId)?.type === "cc";
 
-  // 1. Merchant memory — user-taught rules take absolute priority
+  // 1. Merchant memory — user-taught rules always win
   if (merchantMemory[desc]) return merchantMemory[desc];
 
-  // 2. MB-DEP direct deposit (SR Bank)
+  // 2. MB-DEP — direct deposit
   if (/mb-dep|mb dep/.test(desc)) {
     if (accountId === "sr_scotia_bank")
       return abs > 300
@@ -78,19 +81,19 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
       return { main: "Navneet Rathore", sub: "NR DS Paycheck", section: "income" };
   }
 
-  // 3. Sub-description rules (bank CSVs — highly reliable)
-  if (/delta.sd/i.test(sub))                                    return { main: "Navneet Rathore",    sub: "NR DS Paycheck",        section: "income"   };
-  if (/pacific.blue.cross/i.test(sub))                          return { main: "Navneet Rathore",    sub: "Other Income",          section: "income"   };
-  if (/\bcanada\b/i.test(sub) && /fed-prov|terr/i.test(desc))  return { main: "Navneet Rathore",    sub: "Canada Child Benefit",  section: "income"   };
-  if (/slc.pad/i.test(sub))                                     return { main: "Debt & Banking",     sub: "Student Loan",          section: "expenses" };
-  if (/rbc.loan/i.test(sub))                                    return { main: "Transportation",     sub: "Tesla Loan",            section: "expenses" };
-  if (/gobind.marg/i.test(sub))                                 return { main: "Family",             sub: "Gurshaan School Fees",  section: "expenses" };
-  if (/gurdwara/i.test(sub))                                    return { main: "Charity",            sub: "Charity / Donations",   section: "expenses" };
-  if (/cibc.card/i.test(sub))                                   return { main: "TRANSFER",           sub: "CC Payment",            section: "transfer" };
-  if (/monthly.fees/i.test(sub))                                return { main: "Debt & Banking",     sub: "Bank Fees",             section: "expenses" };
-  if (/interac.e-transfer.rtn/i.test(sub))                      return { main: "TRANSFER",           sub: "Transfer — Exclude",    section: "transfer" };
+  // 3. Sub-description rules (bank CSVs)
+  if (/delta.sd/i.test(sub))                                    return { main: "Navneet Rathore", sub: "NR DS Paycheck",       section: "income"   };
+  if (/pacific.blue.cross/i.test(sub))                          return { main: "Navneet Rathore", sub: "Other Income",         section: "income"   };
+  if (/\bcanada\b/i.test(sub) && /fed-prov|terr/i.test(desc))  return { main: "Navneet Rathore", sub: "Canada Child Benefit", section: "income"   };
+  if (/slc.pad/i.test(sub))                                     return { main: "Debt & Banking",  sub: "Student Loan",         section: "expenses" };
+  if (/rbc.loan/i.test(sub))                                    return { main: "Transportation",  sub: "Tesla Loan",           section: "expenses" };
+  if (/gobind.marg/i.test(sub))                                 return { main: "Family",          sub: "Gurshaan School Fees", section: "expenses" };
+  if (/gurdwara/i.test(sub))                                    return { main: "Charity",         sub: "Charity / Donations",  section: "expenses" };
+  if (/cibc.card/i.test(sub))                                   return { main: "TRANSFER",        sub: "CC Payment",           section: "transfer" };
+  if (/monthly.fees/i.test(sub))                                return { main: "Debt & Banking",  sub: "Bank Fees",            section: "expenses" };
+  if (/interac.e-transfer.rtn/i.test(sub))                      return { main: "TRANSFER",        sub: "Transfer — Exclude",   section: "transfer" };
 
-  // 4. Free Interac E-Transfer — fixed-amount NR bank rules
+  // 4. Free Interac E-Transfer — NR bank fixed-amount rules
   if (/free.interac.e-transfer/i.test(sub)) {
     if (accountId === "nr_scotia_bank") {
       if (abs === 3000) return { main: "Home",   sub: "Rent",                 section: "expenses" };
@@ -100,13 +103,15 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
     return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
   }
 
-  // 5. Insurance Corporation of BC (by amount: Tesla=higher, Van=lower)
-  if (/insurance.corporation|icbc/i.test(sub) || /^insurance$/i.test(desc))
-    return abs >= 220
-      ? { main: "Transportation", sub: "Tesla ICBC", section: "expenses" }
-      : { main: "Transportation", sub: "Van ICBC",   section: "expenses" };
+  // 5. Insurance Corp of BC — bank only (monthly payments)
+  if (/insurance.corporation|icbc/i.test(sub) || /^insurance$/i.test(desc)) {
+    if (!isCCAcct)
+      return abs >= 220
+        ? { main: "Transportation", sub: "Tesla ICBC", section: "expenses" }
+        : { main: "Transportation", sub: "Van ICBC",   section: "expenses" };
+  }
 
-  // 6. Wealthsimple savings — categorize by amount
+  // 6. Wealthsimple savings — by amount
   if (/wealthsimple/i.test(sub) || /wealthsimple/i.test(desc)) {
     if (abs >= 640 && abs <= 660) return { main: "SR FHSA",       sub: "SR FHSA",       section: "savings" };
     if (abs >= 490 && abs <= 510) return { main: "SR TFSA",       sub: "SR TFSA",       section: "savings" };
@@ -115,95 +120,113 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
     return { main: "SR TFSA", sub: "SR TFSA", section: "savings" };
   }
 
-  // 7. CC payments and bank transfers
-  if (/crd\.card.bill|credit.card.pay|card.bill.payment/i.test(desc))
-    return { main: "TRANSFER", sub: "CC Payment", section: "transfer" };
-  if (/scotiabank.*transit|abm.*interac/i.test(desc))
-    return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
-  if (/service.charge/i.test(desc))
-    return { main: "Debt & Banking", sub: "Bank Fees", section: "expenses" };
+  // 7. CC payments / bank transfers
+  if (/credit.card.*loc.payment|crd\.card.bill|credit.card.pay/i.test(desc)) return { main: "TRANSFER", sub: "CC Payment",         section: "transfer" };
+  if (/panorama.place/i.test(desc) || /panorama.place/i.test(sub))           return { main: "TRANSFER", sub: "CC Payment",         section: "transfer" };
+  if (/scotiabank.transit/i.test(desc) || /scotiabank.transit/i.test(sub))   return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
+  if (/scotiabank.*transit|abm.*interac/i.test(desc))                         return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
+  if (/service.charge/i.test(desc))                                           return { main: "Debt & Banking", sub: "Bank Fees",    section: "expenses" };
 
-  // 8. Costco on bank (credit = refund → treat as transfer/exclude)
-  if (/costco/i.test(sub) && !isCC && amount > 0)
-    return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
+  // 8. Costco on bank credit = exclude
+  if (/costco/i.test(sub) && !isCCAcct && amount > 0) return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
 
-  // 9. Merchant / keyword rules (CC + bank descriptions)
+  // 9. Merchant keyword rules
   const m = `${desc} ${sub}`;
 
   // ── Income ──
-  if (/canada.child|ccb.federal/i.test(m))               return { main: "Navneet Rathore", sub: "Canada Child Benefit", section: "income"   };
-  if (/payroll.deposit|direct.deposit/i.test(m) && /delta.sd/i.test(m)) return { main: "Navneet Rathore", sub: "NR DS Paycheck", section: "income" };
+  if (/canada.child|ccb.federal/i.test(m))    return { main: "Navneet Rathore", sub: "Canada Child Benefit", section: "income" };
 
-  // ── Groceries ──
-  if (/fruiticana|fruiticna/i.test(m))                   return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/no.frills/i.test(m))                              return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/instacart|ic\*.insta/i.test(m))                   return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/jeenkha.farms/i.test(m))                          return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/sabzi.mandi/i.test(m))                            return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/akal.sales/i.test(m))                             return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/sunfarm.produce/i.test(m))                        return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/freshco/i.test(m))                                return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/walmart|wal-mart/i.test(m))                       return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/superstore|real cdn|real canadian/i.test(m))      return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/save.on.foods/i.test(m))                          return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/t&t.supermarket/i.test(m))                        return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/manohar.vegetarian/i.test(m))                     return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/costco/i.test(m) && isCC)                         return { main: "Food & Dining", sub: "Groceries",  section: "expenses" };
-  if (/costco.gas|gas.stn(?!\w)/i.test(m))               return { main: "Transportation", sub: "Gas",       section: "expenses" };
-
-  // ── Dining Out ──
-  if (/uber.eats/i.test(m))                              return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/super.vege.pizza|\bpizza\b/i.test(m))             return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/udupi.adda/i.test(m))                             return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/calgary.sweets/i.test(m))                         return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/chimney.hill/i.test(m))                           return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/tim.horton/i.test(m))                             return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/\bsubway\b/i.test(m))                             return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/\ba&w\b|a and w/i.test(m))                        return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/mcdonald|burger.king|starbucks|dairy.queen/i.test(m)) return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-
-  // ── Transportation ──
-  if (/^uber$/i.test(desc) || /\buber\b/i.test(desc))    return { main: "Transportation", sub: "Rideshare",  section: "expenses" };
-  if (/^lyft$/i.test(desc) || /\blyft\b/i.test(desc))    return { main: "Transportation", sub: "Rideshare",  section: "expenses" };
-  if (/tesla/i.test(m) && abs < 50)                      return { main: "Transportation", sub: "Tesla App",  section: "expenses" };
-  if (/\bicbc\b/i.test(m))
+  // ── ICBC on CC (annual payments — default Tesla, user can adjust) ──
+  if (/\bicbc\b/i.test(m) && isCCAcct)        return { main: "Transportation", sub: "Tesla ICBC",  section: "expenses" };
+  if (/\bicbc\b/i.test(m) && !isCCAcct)
     return abs >= 220
       ? { main: "Transportation", sub: "Tesla ICBC", section: "expenses" }
       : { main: "Transportation", sub: "Van ICBC",   section: "expenses" };
 
+  // ── Groceries ──
+  if (/fruiticana|fruiticna/i.test(m))        return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/no.frills/i.test(m))                   return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/instacart|ic\*.insta|ic\*.costco/i.test(m)) return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/jeenkha.farms/i.test(m))               return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/sabzi.mandi/i.test(m))                 return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/akal.sales/i.test(m))                  return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/sunfarm.produce/i.test(m))             return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/freshco/i.test(m))                     return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/walmart|wal-mart/i.test(m))            return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/superstore|real cdn|real canadian/i.test(m)) return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/save.on.foods/i.test(m))               return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/t&t.supermarket/i.test(m))             return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/manohar.vegetarian/i.test(m))          return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/punjab.flour.mill/i.test(m))           return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/day.to.day/i.test(m))                  return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+  if (/costco/i.test(m) && isCCAcct)          return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
+
+  // ── Dining Out ──
+  if (/uber.eats|ubereats/i.test(m))          return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/super.vege.pizza|\bpizza\b/i.test(m))  return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/udupi.adda/i.test(m))                  return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/calgary.sweets/i.test(m))              return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/chimney.hill/i.test(m))                return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/tim.horton/i.test(m))                  return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/\bsubway\b/i.test(m))                  return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/\ba&w\b|a and w/i.test(m))             return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/mcdonald|burger.king|starbucks/i.test(m)) return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/burgrill/i.test(m))                    return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/shudh.vaishnu/i.test(m))               return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/purdy.*chocolat/i.test(m))             return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/7.eleven|7eleven|seven.eleven/i.test(m)) return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+
+  // ── Transportation ──
+  if (/^uber$/i.test(desc) || /uber.canada\/ubertrip|uber.holdings|uber \*trip/i.test(m)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
+  if (/^lyft$/i.test(desc) || /\blyft\b/i.test(desc)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
+  if (/abby.tires/i.test(m))                  return { main: "Transportation", sub: "Car Maintenance", section: "expenses" };
+  if (/costco.gas|gas.stn(?!\w)/i.test(m))    return { main: "Transportation", sub: "Gas",            section: "expenses" };
+  if (/tesla/i.test(m) && abs < 50)           return { main: "Transportation", sub: "Tesla App",      section: "expenses" };
+
   // ── Health ──
-  if (/shoppers.drug|shopper.*drug|shoppers drug/i.test(m)) return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
-  if (/guildford.drugs/i.test(m))                        return { main: "Health", sub: "Pharmacy & Medical",    section: "expenses" };
-  if (/lifelabs/i.test(m))                               return { main: "Health", sub: "Pharmacy & Medical",    section: "expenses" };
-  if (/physiofirst|physiother/i.test(m))                 return { main: "Health", sub: "Pharmacy & Medical",    section: "expenses" };
-  if (/\bymca\b/i.test(m))                               return { main: "Health", sub: "YMCA",                  section: "expenses" };
+  if (/shoppers.drug|shoppers drug/i.test(m)) return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
+  if (/guildford.drugs/i.test(m))             return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
+  if (/lifelabs/i.test(m))                    return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
+  if (/physiofirst|physiother/i.test(m))      return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
+  if (/\bymca\b/i.test(m))                    return { main: "Health", sub: "YMCA",               section: "expenses" };
+  if (/fade.factory|hv.fade|barbershop/i.test(m)) return { main: "Health", sub: "Wellness & Beauty", section: "expenses" };
 
   // ── Shopping ──
-  if (/amazon.prime|amznprime/i.test(m))                 return { main: "Digital",   sub: "Amazon Prime",         section: "expenses" };
-  if (/\bamazon\b/i.test(m))                             return { main: "Shopping",  sub: "Amazon Purchases",      section: "expenses" };
-  if (/dollarama/i.test(m))                              return { main: "Shopping",  sub: "Household / Dollarama", section: "expenses" };
-  if (/elegant.housewares/i.test(m))                     return { main: "Shopping",  sub: "Household / Dollarama", section: "expenses" };
-  if (/\bwinners\b/i.test(m))                            return { main: "Shopping",  sub: "Clothing",              section: "expenses" };
-  if (/\btemu\b/i.test(m))                               return { main: "Shopping",  sub: "Clothing",              section: "expenses" };
+  if (/amazon.prime|amznprime/i.test(m))      return { main: "Digital",  sub: "Amazon Prime",          section: "expenses" };
+  if (/\bamazon\b/i.test(m))                  return { main: "Shopping", sub: "Amazon Purchases",       section: "expenses" };
+  if (/dollarama/i.test(m))                   return { main: "Shopping", sub: "Household / Dollarama",  section: "expenses" };
+  if (/elegant.housewares/i.test(m))          return { main: "Shopping", sub: "Household / Dollarama",  section: "expenses" };
+  if (/\bikea\b/i.test(m))                    return { main: "Shopping", sub: "Household / Dollarama",  section: "expenses" };
+  if (/\bwinners\b/i.test(m))                 return { main: "Shopping", sub: "Clothing",               section: "expenses" };
+  if (/\btemu\b/i.test(m))                    return { main: "Shopping", sub: "Clothing",               section: "expenses" };
+  if (/gap.outlet/i.test(m))                  return { main: "Shopping", sub: "Clothing",               section: "expenses" };
+  if (/la.vie.en.rose/i.test(m))              return { main: "Shopping", sub: "Clothing",               section: "expenses" };
+  if (/pastime.sports/i.test(m))              return { main: "Shopping", sub: "Clothing",               section: "expenses" };
 
   // ── Digital ──
-  if (/\bfido\b/i.test(m))                               return { main: "Digital", sub: "Fido Mobile",    section: "expenses" };
-  if (/\btelus\b/i.test(m))                              return { main: "Digital", sub: "Telus Internet",  section: "expenses" };
-  if (/apple.bill|apple\.com|icloud/i.test(m))           return { main: "Digital", sub: "Apple / iCloud", section: "expenses" };
-  if (/chatgpt|openai/i.test(m))                         return { main: "Digital", sub: "ChatGPT",         section: "expenses" };
-  if (/\bnetflix\b/i.test(m))                            return { main: "Digital", sub: "Netflix",         section: "expenses" };
-  if (/google.*storage|gmail.*storage/i.test(m))         return { main: "Digital", sub: "Gmail",           section: "expenses" };
-  if (/\bnintendo\b/i.test(m))                           return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
+  if (/\bfido\b/i.test(m))                    return { main: "Digital", sub: "Fido Mobile",    section: "expenses" };
+  if (/\btelus\b/i.test(m))                   return { main: "Digital", sub: "Telus Internet",  section: "expenses" };
+  if (/apple.bill|apple\.com|icloud/i.test(m)) return { main: "Digital", sub: "Apple / iCloud", section: "expenses" };
+  if (/chatgpt|openai/i.test(m))              return { main: "Digital", sub: "ChatGPT",         section: "expenses" };
+  if (/\bnetflix\b/i.test(m))                 return { main: "Digital", sub: "Netflix",         section: "expenses" };
+  if (/google.*storage|gmail.*storage/i.test(m)) return { main: "Digital", sub: "Gmail",        section: "expenses" };
 
   // ── Family ──
-  if (/gobind.marg/i.test(m))                            return { main: "Family", sub: "Gurshaan School Fees", section: "expenses" };
-  if (/daycare|ecds|child.care/i.test(m))                return { main: "Family", sub: "Gurnadar Daycare",     section: "expenses" };
+  if (/gobind.marg/i.test(m))                 return { main: "Family", sub: "Gurshaan School Fees", section: "expenses" };
+  if (/daycare|ecds|child.care/i.test(m))     return { main: "Family", sub: "Gurnadar Daycare",     section: "expenses" };
 
   // ── Charity ──
-  if (/gurdwara/i.test(m))                               return { main: "Charity", sub: "Charity / Donations", section: "expenses" };
-  if (/\bremitly\b/i.test(m))                            return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
+  if (/gurdwara/i.test(m))                    return { main: "Charity", sub: "Charity / Donations", section: "expenses" };
+  if (/guru.nanak.food.bank/i.test(m))        return { main: "Charity", sub: "Charity / Donations", section: "expenses" };
 
-  return null; // uncategorized — excluded from all totals
+  // ── Misc ──
+  if (/newton.library|\blibrary\b/i.test(m))  return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
+  if (/ups.store/i.test(m))                   return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
+  if (/bear.creek.train/i.test(m))            return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
+  if (/\bremitly\b/i.test(m))                 return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
+  if (/\bnintendo\b/i.test(m))                return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
+
+  return null;
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -211,7 +234,7 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
 const clean = s => (s || "").replace(/"/g, "").trim();
 
 function fmt(n) {
-  if (n === null || n === undefined) return "—";
+  if (n === null || n === undefined || isNaN(n)) return "—";
   return new Intl.NumberFormat("en-CA", {
     style: "currency", currency: "CAD",
     minimumFractionDigits: 0, maximumFractionDigits: 0,
@@ -245,20 +268,13 @@ function getActualColor(actual, budget, type) {
   if (!actual || actual === 0) return "neutral";
   if (!budget || budget === 0) return "neutral";
   const r = actual / budget;
-  if (type === "expense") {
-    if (r <= 1.0) return "green";
-    if (r <= 1.2) return "amber";
-    return "red";
-  }
-  if (r >= 1.0) return "green";
-  if (r >= 0.8) return "amber";
-  return "red";
+  if (type === "expense") { if (r <= 1.0) return "green"; if (r <= 1.2) return "amber"; return "red"; }
+  if (r >= 1.0) return "green"; if (r >= 0.8) return "amber"; return "red";
 }
 function colorCls(c) {
-  return { green:"c-green", amber:"c-amber", red:"c-red", neutral:"c-muted" }[c] || "c-muted";
+  return { green: "c-green", amber: "c-amber", red: "c-red", neutral: "c-muted" }[c] || "c-muted";
 }
 function accountLabel(id) { return ACCOUNTS.find(a => a.id === id)?.label || id; }
-function isCC(id)         { return ACCOUNTS.find(a => a.id === id)?.type === "cc"; }
 
 // ─── CSV PARSING ─────────────────────────────────────────────────────────────
 
@@ -278,21 +294,19 @@ function parseCSV(text, accountId, merchantMemory = {}) {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return { transactions: [], balanceInfo: null };
 
-  const header   = parseCSVLine(lines[0]).map(h => clean(h).toLowerCase());
-  const idx      = terms => header.findIndex(h => terms.some(t => h.includes(t)));
+  const header = parseCSVLine(lines[0]).map(h => clean(h).toLowerCase());
+  const idx    = terms => header.findIndex(h => terms.some(t => h.includes(t)));
 
   const dateIdx    = idx(["date"]);
   const descIdx    = idx(["description"]);
-  const subDescIdx = idx(["sub-description","subdescription","sub description","narrative"]);
-  const typeIdx    = idx(["type of transaction","type","transaction type"]);
+  const subDescIdx = idx(["sub-description", "subdescription", "sub description", "narrative"]);
+  const typeIdx    = idx(["type of transaction", "type", "transaction type"]);
   const amtIdx     = idx(["amount"]);
   const balIdx     = idx(["balance"]);
   const statusIdx  = idx(["status"]);
 
-  // CC: has Status column OR no Balance column
   const ccMode = statusIdx >= 0 || balIdx < 0;
-
-  const rows = [];
+  const rows   = [];
 
   for (let i = 1; i < lines.length; i++) {
     const cells = parseCSVLine(lines[i]);
@@ -304,18 +318,14 @@ function parseCSV(text, accountId, merchantMemory = {}) {
     const description = clean(cells[descIdx >= 0 ? descIdx : 1]);
     const subDesc     = subDescIdx >= 0 ? clean(cells[subDescIdx]) : "";
     const txType      = typeIdx >= 0 ? clean(cells[typeIdx]).toLowerCase() : "";
-    const rawBalance  = !ccMode && balIdx >= 0
+    const rawBalance  = (!ccMode && balIdx >= 0)
       ? parseFloat(clean(cells[balIdx]).replace(/[,\s]/g, "")) : null;
 
     let amount = parseFloat(clean(cells[amtIdx >= 0 ? amtIdx : 2]).replace(/[,\s]/g, "")) || 0;
-
     if (ccMode) {
-      // CC CSVs: amounts are unsigned; Type of Transaction tells us the sign
       amount = Math.abs(amount);
-      if (txType.includes("debit")) amount = -amount; // expense
-      // "credit" stays positive (refund)
+      if (txType.includes("debit")) amount = -amount;
     }
-    // Bank CSVs: amounts are already signed (negatives are debits)
 
     let d = new Date(rawDate + "T00:00:00");
     if (isNaN(d)) {
@@ -343,7 +353,7 @@ function parseCSV(text, accountId, merchantMemory = {}) {
       amount,
       mainCategory:   cat?.main    || "",
       subCategory:    cat?.sub     || "",
-      section:        cat?.section || "",   // empty = uncategorized = excluded from totals
+      section:        cat?.section || "",
       remarks:        "",
       isTransfer:     cat?.section === "transfer",
       autoDetected:   !!cat,
@@ -351,15 +361,12 @@ function parseCSV(text, accountId, merchantMemory = {}) {
     });
   }
 
-  // Opening/closing balance (bank only, from Balance column)
   let balanceInfo = null;
   if (!ccMode && rows.some(r => r.balance !== null)) {
     const sorted = [...rows].filter(r => r.balance !== null)
       .sort((a, b) => new Date(a.date) - new Date(b.date));
     if (sorted.length > 0) {
-      const first = sorted[0];
-      const last  = sorted[sorted.length - 1];
-      // opening = balance_after_first_tx - amount_of_first_tx
+      const first = sorted[0], last = sorted[sorted.length - 1];
       balanceInfo = { opening: first.balance - first.amount, closing: last.balance };
     }
   }
@@ -372,21 +379,15 @@ function parseInvestmentCSV(text, accountId) {
   if (lines.length < 2) return [];
   const header = parseCSVLine(lines[0]).map(h => clean(h).toLowerCase());
   const idx    = terms => header.findIndex(h => terms.some(t => h.includes(t)));
-  const symIdx  = idx(["symbol","ticker"]);
-  const nameIdx = idx(["name","description","security","holding"]);
-  const qtyIdx  = idx(["qty","quantity","shares","units"]);
-  const bookIdx = idx(["book","cost","acb"]);
-  const mktIdx  = idx(["market","value","current"]);
   return lines.slice(1).map((line, i) => {
     const cells = parseCSVLine(line);
     return {
-      id:          `inv-${Date.now()}-${i}`,
-      account:     accountId,
-      symbol:      clean(cells[symIdx]  || "") || "—",
-      name:        clean(cells[nameIdx] || "") || "—",
-      qty:         parseFloat(clean(cells[qtyIdx]  || "").replace(/,/g,"")) || 0,
-      bookValue:   parseFloat(clean(cells[bookIdx] || "").replace(/,/g,"")) || 0,
-      marketValue: parseFloat(clean(cells[mktIdx]  || "").replace(/,/g,"")) || 0,
+      id: `inv-${Date.now()}-${i}`, account: accountId,
+      symbol:      clean(cells[idx(["symbol","ticker"])] || "") || "—",
+      name:        clean(cells[idx(["name","description","security","holding"])] || "") || "—",
+      qty:         parseFloat(clean(cells[idx(["qty","quantity","shares","units"])] || "").replace(/,/g,"")) || 0,
+      bookValue:   parseFloat(clean(cells[idx(["book","cost","acb"])] || "").replace(/,/g,"")) || 0,
+      marketValue: parseFloat(clean(cells[idx(["market","value","current"])] || "").replace(/,/g,"")) || 0,
     };
   }).filter(r => r.qty > 0 || r.bookValue > 0 || r.marketValue > 0);
 }
@@ -394,19 +395,12 @@ function parseInvestmentCSV(text, accountId) {
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("overview");
-
-  const nowKey = (() => {
-    const n = new Date();
-    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}`;
-  })();
-
+  const [activeTab,     setActiveTab]     = useState("overview");
+  const nowKey = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}`; })();
   const [selectedMonth, setSelectedMonth] = useState(nowKey);
   const [selectedYear,  setSelectedYear]  = useState(new Date().getFullYear());
 
-  const load = (key, def) => {
-    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; }
-  };
+  const load = (key, def) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; } };
 
   const [transactions,    setTransactions]    = useState(() => load("rf_transactions",    []));
   const [categories,      setCategories]      = useState(() => load("rf_categories",      null) || DEFAULT_CATEGORIES);
@@ -422,28 +416,15 @@ export default function App() {
   useEffect(() => { localStorage.setItem("rf_balances",        JSON.stringify(accountBalances)); }, [accountBalances]);
   useEffect(() => { localStorage.setItem("rf_merchant_memory", JSON.stringify(merchantMemory));  }, [merchantMemory]);
 
-  function showToast(msg, type = "info") {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
-  }
+  function showToast(msg, type = "info") { setToast({ msg, type }); setTimeout(() => setToast(null), 4000); }
+  function prevMonth() { const [y,m]=selectedMonth.split("-").map(Number); setSelectedMonth(m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,"0")}`); }
+  function nextMonth() { const [y,m]=selectedMonth.split("-").map(Number); setSelectedMonth(m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,"0")}`); }
 
-  function prevMonth() {
-    const [y,m] = selectedMonth.split("-").map(Number);
-    setSelectedMonth(m===1 ? `${y-1}-12` : `${y}-${String(m-1).padStart(2,"0")}`);
-  }
-  function nextMonth() {
-    const [y,m] = selectedMonth.split("-").map(Number);
-    setSelectedMonth(m===12 ? `${y+1}-01` : `${y}-${String(m+1).padStart(2,"0")}`);
-  }
-
-  // Import with duplicate detection
   function handleImport(text, accountId) {
     const { transactions: newTxs, balanceInfo } = parseCSV(text, accountId, merchantMemory);
-    if (!newTxs.length) { showToast("No valid transactions found in file", "error"); return; }
-
+    if (!newTxs.length) { showToast("No valid transactions found", "error"); return; }
     const months      = [...new Set(newTxs.map(t => t.month))];
     const hasExisting = months.some(m => transactions.some(t => t.account===accountId && t.month===m));
-
     if (hasExisting) {
       const existingCount = transactions.filter(t => t.account===accountId && months.includes(t.month)).length;
       setDupPrompt({ newTxs, accountId, months, existingCount, balanceInfo });
@@ -454,14 +435,11 @@ export default function App() {
 
   function commitImport(newTxs, accountId, months, balanceInfo, replace) {
     setTransactions(prev => {
-      const base = replace
-        ? prev.filter(t => !(t.account===accountId && months.includes(t.month)))
-        : prev;
-      const keys  = new Set(base.map(t => `${t.date}|${t.description}|${t.amount}|${t.account}`));
+      const base = replace ? prev.filter(t => !(t.account===accountId && months.includes(t.month))) : prev;
+      const keys = new Set(base.map(t => `${t.date}|${t.description}|${t.amount}|${t.account}`));
       const toAdd = newTxs.filter(t => !keys.has(`${t.date}|${t.description}|${t.amount}|${t.account}`));
-      const auto  = toAdd.filter(t => t.autoDetected).length;
       const uncat = toAdd.filter(t => !t.mainCategory && !t.isTransfer).length;
-      showToast(`${toAdd.length} transactions imported · ${auto} auto-categorized · ${uncat} need review`);
+      showToast(`${toAdd.length} imported · ${uncat} need review`);
       return [...base, ...toAdd];
     });
     if (balanceInfo) {
@@ -483,27 +461,12 @@ export default function App() {
     }));
   }
 
-  function addManualTransaction(monthKey, accountId) {
-    const now = new Date();
-    const tx = {
-      id: `manual-${Date.now()}`, date: now.toISOString().split("T")[0],
-      month: monthKey, account: accountId, description: "", subDescription: "",
-      amount: 0, mainCategory: "", subCategory: "", section: "",
-      remarks: "", isTransfer: false, autoDetected: false, balance: null,
-    };
-    setTransactions(prev => [tx, ...prev]);
-  }
-
   function deleteTransaction(id) { setTransactions(prev => prev.filter(t => t.id !== id)); }
 
   function clearMonth(key) {
     setTransactions(prev => prev.filter(t => t.month !== key));
-    setAccountBalances(prev => {
-      const u = { ...prev };
-      ACCOUNTS.forEach(a => delete u[`${a.id}-${key}`]);
-      return u;
-    });
-    showToast(`Cleared all data for ${monthLabel(key)}`);
+    setAccountBalances(prev => { const u={...prev}; ACCOUNTS.forEach(a => delete u[`${a.id}-${key}`]); return u; });
+    showToast(`Cleared ${monthLabel(key)}`);
   }
 
   function updateMerchantMemory(descKey, rule) {
@@ -514,9 +477,9 @@ export default function App() {
     const lower = description.toLowerCase().trim();
     let count = 0;
     setTransactions(prev => prev.map(t => {
-      if (t.description.toLowerCase().trim()===lower && (t.mainCategory!==main || t.subCategory!==sub)) {
+      if (t.description.toLowerCase().trim()===lower && (t.mainCategory!==main||t.subCategory!==sub)) {
         count++;
-        return { ...t, mainCategory:main, subCategory:sub, section, isTransfer: section==="transfer" };
+        return { ...t, mainCategory:main, subCategory:sub, section, isTransfer:section==="transfer" };
       }
       return t;
     }));
@@ -524,9 +487,7 @@ export default function App() {
     if (count > 0) showToast(`Applied to ${count} similar transaction${count!==1?"s":""}`);
   }
 
-  const uncatCount = transactions.filter(t =>
-    t.month===selectedMonth && !t.mainCategory && !t.isTransfer
-  ).length;
+  const uncatCount = transactions.filter(t => t.month===selectedMonth && !t.mainCategory && !t.isTransfer).length;
 
   return (
     <div className="app-root">
@@ -538,19 +499,13 @@ export default function App() {
             <div className="dup-title">Duplicate data detected</div>
             <div className="dup-msg">
               <strong>{accountLabel(dupPrompt.accountId)}</strong> already has{" "}
-              <strong>{dupPrompt.existingCount}</strong> transaction{dupPrompt.existingCount!==1?"s":""} for{" "}
+              <strong>{dupPrompt.existingCount}</strong> transactions for{" "}
               {dupPrompt.months.map(monthLabel).join(", ")}.
             </div>
             <div className="dup-actions">
-              <button className="btn-primary"
-                onClick={() => commitImport(dupPrompt.newTxs, dupPrompt.accountId, dupPrompt.months, dupPrompt.balanceInfo, true)}>
-                Replace existing data
-              </button>
-              <button className="btn-ghost"
-                onClick={() => commitImport(dupPrompt.newTxs, dupPrompt.accountId, dupPrompt.months, dupPrompt.balanceInfo, false)}>
-                Merge (skip duplicates)
-              </button>
-              <button className="btn-ghost" onClick={() => setDupPrompt(null)}>Cancel</button>
+              <button className="btn-primary" onClick={() => commitImport(dupPrompt.newTxs,dupPrompt.accountId,dupPrompt.months,dupPrompt.balanceInfo,true)}>Replace existing</button>
+              <button className="btn-ghost"   onClick={() => commitImport(dupPrompt.newTxs,dupPrompt.accountId,dupPrompt.months,dupPrompt.balanceInfo,false)}>Merge (skip duplicates)</button>
+              <button className="btn-ghost"   onClick={() => setDupPrompt(null)}>Cancel</button>
             </div>
           </div>
         </div>
@@ -563,10 +518,7 @@ export default function App() {
           { id:"investments",  label:"Investments",  icon:"◈" },
           { id:"annual",       label:"Annual",       icon:"▦" },
         ].map(tab => (
-          <button key={tab.id}
-            className={`tab-btn${activeTab===tab.id?" active":""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
+          <button key={tab.id} className={`tab-btn${activeTab===tab.id?" active":""}`} onClick={() => setActiveTab(tab.id)}>
             <span className="tab-icon">{tab.icon}</span>
             {tab.label}
             {tab.id==="transactions" && uncatCount>0 && <span className="tab-badge">{uncatCount}</span>}
@@ -575,40 +527,10 @@ export default function App() {
       </nav>
 
       <div className="tab-content">
-        {activeTab==="overview" && (
-          <OverviewTab
-            transactions={transactions} categories={categories}
-            selectedMonth={selectedMonth} accountBalances={accountBalances}
-            onPrevMonth={prevMonth} onNextMonth={nextMonth}
-            onGoToTransactions={() => setActiveTab("transactions")}
-          />
-        )}
-        {activeTab==="transactions" && (
-          <TransactionsTab
-            transactions={transactions} categories={categories}
-            merchantMemory={merchantMemory} selectedMonth={selectedMonth}
-            onPrevMonth={prevMonth} onNextMonth={nextMonth}
-            onImport={handleImport}
-            onAddManual={addManualTransaction}
-            onUpdateTransaction={updateTransaction}
-            onDeleteTransaction={deleteTransaction}
-            onClearMonth={clearMonth}
-            onBulkReCategorize={bulkReCategorize}
-            onCategoriesChange={setCategories}
-            onUpdateMerchantMemory={updateMerchantMemory}
-            showToast={showToast}
-          />
-        )}
-        {activeTab==="investments" && (
-          <InvestmentsTab investments={investments} onInvestmentsChange={setInvestments} showToast={showToast} />
-        )}
-        {activeTab==="annual" && (
-          <AnnualTab transactions={transactions} categories={categories}
-            selectedYear={selectedYear}
-            onPrevYear={() => setSelectedYear(y => y-1)}
-            onNextYear={() => setSelectedYear(y => y+1)}
-          />
-        )}
+        {activeTab==="overview"     && <OverviewTab transactions={transactions} categories={categories} selectedMonth={selectedMonth} accountBalances={accountBalances} onPrevMonth={prevMonth} onNextMonth={nextMonth} onGoToTransactions={() => setActiveTab("transactions")} />}
+        {activeTab==="transactions" && <TransactionsTab transactions={transactions} categories={categories} merchantMemory={merchantMemory} selectedMonth={selectedMonth} onPrevMonth={prevMonth} onNextMonth={nextMonth} onImport={handleImport} onUpdateTransaction={updateTransaction} onDeleteTransaction={deleteTransaction} onClearMonth={clearMonth} onBulkReCategorize={bulkReCategorize} onCategoriesChange={setCategories} onUpdateMerchantMemory={updateMerchantMemory} showToast={showToast} />}
+        {activeTab==="investments"  && <InvestmentsTab investments={investments} onInvestmentsChange={setInvestments} showToast={showToast} />}
+        {activeTab==="annual"       && <AnnualTab transactions={transactions} categories={categories} accountBalances={accountBalances} selectedYear={selectedYear} onPrevYear={() => setSelectedYear(y=>y-1)} onNextYear={() => setSelectedYear(y=>y+1)} />}
       </div>
     </div>
   );
@@ -622,26 +544,20 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
   const [tfExp,   setTfExp]   = useState(false);
 
   const monthTxs = transactions.filter(t => t.month===selectedMonth);
-  // Only categorized + non-transfer transactions count toward budget totals
   const counted  = monthTxs.filter(t => !t.isTransfer && t.mainCategory && t.section);
   const tfTxs    = monthTxs.filter(t => t.isTransfer);
 
   function sumActual(section, mainCat, subCat) {
-    return counted
-      .filter(t => t.section===section && (!mainCat||t.mainCategory===mainCat) && (!subCat||t.subCategory===subCat))
-      .reduce((s,t) => s + Math.abs(t.amount), 0);
+    return counted.filter(t => t.section===section && (!mainCat||t.mainCategory===mainCat) && (!subCat||t.subCategory===subCat)).reduce((s,t)=>s+Math.abs(t.amount),0);
   }
 
-  const bIncome = categories.income.reduce((s,h)   => s + Object.values(h.budget).reduce((a,b)=>a+b,0), 0);
-  const bExp    = categories.expenses.reduce((s,h)  => s + Object.values(h.budget).reduce((a,b)=>a+b,0), 0);
-  const bSav    = categories.savings.reduce((s,h)   => s + h.budget, 0);
+  const bIncome = categories.income.reduce((s,h)=>s+Object.values(h.budget).reduce((a,b)=>a+b,0),0);
+  const bExp    = categories.expenses.reduce((s,h)=>s+Object.values(h.budget).reduce((a,b)=>a+b,0),0);
+  const bSav    = categories.savings.reduce((s,h)=>s+h.budget,0);
   const aIncome = sumActual("income");
   const aExp    = sumActual("expenses");
   const aSav    = sumActual("savings");
   const unalloc = aIncome - aExp - aSav;
-
-  const srTxs = monthTxs.filter(t => t.account==="sr_scotia_bank");
-  const nrTxs = monthTxs.filter(t => t.account==="nr_scotia_bank");
 
   return (
     <div className="tab-pane">
@@ -654,7 +570,6 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
         <button className="btn-ghost btn-sm" onClick={onGoToTransactions}>⬆ Upload CSV</button>
       </div>
 
-      {/* Bank Accounts */}
       <div className="card">
         <div className="bank-header">
           <span className="col-name">🏦 Bank Accounts</span>
@@ -663,11 +578,10 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           <span className="col-hdr">Debits</span>
           <span className="col-hdr">Closing</span>
         </div>
-        <BankRow label="SR Scotia Bank" txs={srTxs} balInfo={accountBalances[`sr_scotia_bank-${selectedMonth}`]} />
-        <BankRow label="NR Scotia Bank" txs={nrTxs} balInfo={accountBalances[`nr_scotia_bank-${selectedMonth}`]} isLast />
+        <BankRow label="SR Scotia Bank" txs={monthTxs.filter(t=>t.account==="sr_scotia_bank")} balInfo={accountBalances[`sr_scotia_bank-${selectedMonth}`]} />
+        <BankRow label="NR Scotia Bank" txs={monthTxs.filter(t=>t.account==="nr_scotia_bank")} balInfo={accountBalances[`nr_scotia_bank-${selectedMonth}`]} isLast />
       </div>
 
-      {/* Summary Tiles */}
       <div className="tiles-row">
         <SummaryTile label="Total Income"   budget={bIncome} actual={aIncome} type="income"  />
         <SummaryTile label="Total Expenses" budget={bExp}    actual={aExp}    type="expense" showBar />
@@ -679,7 +593,6 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
         </div>
       </div>
 
-      {/* Accordion */}
       <div className="card acc-card">
         <div className="acc-col-header">
           <span className="acc-label-col">Category</span>
@@ -688,108 +601,64 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
         </div>
 
         {/* INCOME */}
-        <div className="acc-section-row">
-          <span className="acc-section-icon">↑</span>
-          <span className="acc-label-col acc-section-name">Income</span>
-          <span className="acc-num-col c-muted">{fmt(bIncome)}</span>
-          <span className={`acc-num-col ${colorCls(getActualColor(aIncome,bIncome,"income"))}`}>{aIncome>0?fmt(aIncome):"—"}</span>
-        </div>
+        <div className="acc-section-row"><span className="acc-section-icon">↑</span><span className="acc-label-col acc-section-name">Income</span><span className="acc-num-col c-muted">{fmt(bIncome)}</span><span className={`acc-num-col ${colorCls(getActualColor(aIncome,bIncome,"income"))}`}>{aIncome>0?fmt(aIncome):"—"}</span></div>
         {categories.income.map(h => {
-          const hB = Object.values(h.budget).reduce((a,b)=>a+b,0);
-          const hA = sumActual("income", h.head);
-          const k  = `inc-${h.head}`;
+          const hB=Object.values(h.budget).reduce((a,b)=>a+b,0), hA=sumActual("income",h.head), k=`inc-${h.head}`;
           return (
             <div key={h.head}>
-              <div className="acc-head-row" onClick={() => setHeadExp(p=>({...p,[k]:!p[k]}))}>
+              <div className="acc-head-row" onClick={()=>setHeadExp(p=>({...p,[k]:!p[k]}))}>
                 <span className="acc-chev">{headExp[k]?"▾":"▸"}</span>
                 <span className="acc-label-col">{h.head}</span>
                 <span className="acc-num-col c-muted">{fmt(hB)}</span>
                 <span className={`acc-num-col ${colorCls(getActualColor(hA,hB,"income"))}`}>{hA>0?fmt(hA):"—"}</span>
               </div>
               {headExp[k] && h.subs.map(sub => {
-                const sB = h.budget[sub]||0;
-                const sA = sumActual("income", h.head, sub);
-                return (
-                  <div key={sub} className="acc-item-row">
-                    <span className="acc-label-col acc-item-name">{sub}</span>
-                    <span className="acc-num-col c-muted">{sB>0?fmt(sB):"—"}</span>
-                    <span className={`acc-num-col ${colorCls(getActualColor(sA,sB,"income"))}`}>{sA>0?fmt(sA):"—"}</span>
-                  </div>
-                );
+                const sB=h.budget[sub]||0, sA=sumActual("income",h.head,sub);
+                return (<div key={sub} className="acc-item-row"><span className="acc-label-col acc-item-name">{sub}</span><span className="acc-num-col c-muted">{sB>0?fmt(sB):"—"}</span><span className={`acc-num-col ${colorCls(getActualColor(sA,sB,"income"))}`}>{sA>0?fmt(sA):"—"}</span></div>);
               })}
             </div>
           );
         })}
 
         {/* EXPENSES */}
-        <div className="acc-section-row">
-          <span className="acc-section-icon">↓</span>
-          <span className="acc-label-col acc-section-name">Expenses</span>
-          <span className="acc-num-col c-muted">{fmt(bExp)}</span>
-          <span className={`acc-num-col ${colorCls(getActualColor(aExp,bExp,"expense"))}`}>{aExp>0?fmt(aExp):"—"}</span>
-        </div>
+        <div className="acc-section-row"><span className="acc-section-icon">↓</span><span className="acc-label-col acc-section-name">Expenses</span><span className="acc-num-col c-muted">{fmt(bExp)}</span><span className={`acc-num-col ${colorCls(getActualColor(aExp,bExp,"expense"))}`}>{aExp>0?fmt(aExp):"—"}</span></div>
         {categories.expenses.map(h => {
-          const hB = Object.values(h.budget).reduce((a,b)=>a+b,0);
-          const hA = counted.filter(t=>t.section==="expenses"&&t.mainCategory===h.head).reduce((s,t)=>s+Math.abs(t.amount),0);
-          const k  = `exp-${h.head}`;
+          const hB=Object.values(h.budget).reduce((a,b)=>a+b,0), hA=counted.filter(t=>t.section==="expenses"&&t.mainCategory===h.head).reduce((s,t)=>s+Math.abs(t.amount),0), k=`exp-${h.head}`;
           return (
             <div key={h.head}>
-              <div className="acc-head-row" onClick={() => setHeadExp(p=>({...p,[k]:!p[k]}))}>
+              <div className="acc-head-row" onClick={()=>setHeadExp(p=>({...p,[k]:!p[k]}))}>
                 <span className="acc-chev">{headExp[k]?"▾":"▸"}</span>
                 <span className="acc-label-col">{h.head}</span>
                 <span className="acc-num-col c-muted">{fmt(hB)}</span>
                 <span className={`acc-num-col ${colorCls(getActualColor(hA,hB,"expense"))}`}>{hA>0?fmt(hA):"—"}</span>
               </div>
               {headExp[k] && h.subs.map(sub => {
-                const sB = h.budget[sub]||0;
-                const sA = counted.filter(t=>t.section==="expenses"&&t.mainCategory===h.head&&t.subCategory===sub).reduce((s,t)=>s+Math.abs(t.amount),0);
-                return (
-                  <div key={sub} className="acc-item-row">
-                    <span className="acc-label-col acc-item-name">{sub}</span>
-                    <span className="acc-num-col c-muted">{sB>0?fmt(sB):"—"}</span>
-                    <span className={`acc-num-col ${colorCls(getActualColor(sA,sB,"expense"))}`}>{sA>0?fmt(sA):"—"}</span>
-                  </div>
-                );
+                const sB=h.budget[sub]||0, sA=counted.filter(t=>t.section==="expenses"&&t.mainCategory===h.head&&t.subCategory===sub).reduce((s,t)=>s+Math.abs(t.amount),0);
+                return (<div key={sub} className="acc-item-row"><span className="acc-label-col acc-item-name">{sub}</span><span className="acc-num-col c-muted">{sB>0?fmt(sB):"—"}</span><span className={`acc-num-col ${colorCls(getActualColor(sA,sB,"expense"))}`}>{sA>0?fmt(sA):"—"}</span></div>);
               })}
             </div>
           );
         })}
 
         {/* SAVINGS */}
-        <div className="acc-section-row clickable" onClick={() => setSavExp(s=>!s)}>
-          <span className="acc-chev">{savExp?"▾":"▸"}</span>
-          <span className="acc-label-col acc-section-name">Savings</span>
+        <div className="acc-section-row clickable" onClick={()=>setSavExp(s=>!s)}>
+          <span className="acc-chev">{savExp?"▾":"▸"}</span><span className="acc-label-col acc-section-name">Savings</span>
           <span className="acc-num-col c-muted">{fmt(bSav)}</span>
           <span className={`acc-num-col ${colorCls(getActualColor(aSav,bSav,"savings"))}`}>{aSav>0?fmt(aSav):"—"}</span>
         </div>
         {savExp && categories.savings.map(s => {
-          const sA = sumActual("savings", s.head);
-          return (
-            <div key={s.head} className="acc-item-row">
-              <span className="acc-label-col acc-item-name">{s.head}</span>
-              <span className="acc-num-col c-muted">{s.budget>0?fmt(s.budget):"—"}</span>
-              <span className={`acc-num-col ${colorCls(getActualColor(sA,s.budget,"savings"))}`}>{sA>0?fmt(sA):"—"}</span>
-            </div>
-          );
+          const sA=sumActual("savings",s.head);
+          return (<div key={s.head} className="acc-item-row"><span className="acc-label-col acc-item-name">{s.head}</span><span className="acc-num-col c-muted">{s.budget>0?fmt(s.budget):"—"}</span><span className={`acc-num-col ${colorCls(getActualColor(sA,s.budget,"savings"))}`}>{sA>0?fmt(sA):"—"}</span></div>);
         })}
 
         {/* TRANSFERS */}
-        <div className="acc-section-row clickable dimmed" onClick={() => setTfExp(s=>!s)}>
-          <span className="acc-chev">{tfExp?"▾":"▸"}</span>
-          <span className="acc-label-col acc-section-name">Transfers — excluded from all calculations</span>
-          <span className="acc-num-col">—</span>
-          <span className="acc-num-col">—</span>
+        <div className="acc-section-row clickable dimmed" onClick={()=>setTfExp(s=>!s)}>
+          <span className="acc-chev">{tfExp?"▾":"▸"}</span><span className="acc-label-col acc-section-name">Transfers — excluded from all calculations</span>
+          <span className="acc-num-col">—</span><span className="acc-num-col">—</span>
         </div>
-        {tfExp && (
-          tfTxs.length===0
-            ? <div className="acc-item-row"><span className="acc-label-col acc-item-name c-muted">No transfers this month</span><span className="acc-num-col">—</span><span className="acc-num-col">—</span></div>
-            : tfTxs.map(t=>(
-              <div key={t.id} className="acc-item-row">
-                <span className="acc-label-col acc-item-name">{t.description}</span>
-                <span className="acc-num-col c-muted">—</span>
-                <span className="acc-num-col c-muted">{fmt(Math.abs(t.amount))}</span>
-              </div>
-            ))
+        {tfExp && (tfTxs.length===0
+          ? <div className="acc-item-row"><span className="acc-label-col acc-item-name c-muted">No transfers this month</span><span className="acc-num-col">—</span><span className="acc-num-col">—</span></div>
+          : tfTxs.map(t => (<div key={t.id} className="acc-item-row"><span className="acc-label-col acc-item-name">{t.description}</span><span className="acc-num-col c-muted">—</span><span className="acc-num-col c-muted">{fmt(Math.abs(t.amount))}</span></div>))
         )}
       </div>
     </div>
@@ -802,21 +671,21 @@ function BankRow({ label, txs, balInfo, isLast }) {
   return (
     <div className={`bank-row${isLast?" last":""}`}>
       <span className="col-name bank-name">{label}</span>
-      <span className="bank-col c-muted">{balInfo ? fmt(balInfo.opening) : "—"}</span>
-      <span className="bank-col c-green">{credits>0 ? `+${fmt(credits)}` : "—"}</span>
-      <span className="bank-col c-red">{debits>0 ? `−${fmt(debits)}` : "—"}</span>
-      <span className="bank-col" style={{fontWeight:500}}>{balInfo ? fmt(balInfo.closing) : (credits>0||debits>0 ? fmt(credits-debits) : "—")}</span>
+      <span className="bank-col c-muted">{balInfo?fmt(balInfo.opening):"—"}</span>
+      <span className="bank-col c-green">{credits>0?`+${fmt(credits)}`:"—"}</span>
+      <span className="bank-col c-red">{debits>0?`−${fmt(debits)}`:"—"}</span>
+      <span className="bank-col" style={{fontWeight:500}}>{balInfo?fmt(balInfo.closing):(credits>0||debits>0?fmt(credits-debits):"—")}</span>
     </div>
   );
 }
 
 function SummaryTile({ label, budget, actual, type, showBar }) {
-  const color = getActualColor(actual, budget, type);
-  const pct   = budget>0 ? Math.min(Math.round((actual/budget)*100),100) : 0;
+  const color = getActualColor(actual,budget,type);
+  const pct   = budget>0?Math.min(Math.round((actual/budget)*100),100):0;
   return (
     <div className="tile">
       <div className="tile-label">{label}</div>
-      <div className={`tile-value ${colorCls(color)}`}>{actual>0 ? fmt(actual) : "—"}</div>
+      <div className={`tile-value ${colorCls(color)}`}>{actual>0?fmt(actual):"—"}</div>
       <div className="tile-sub">Budget {fmt(budget)} · {pct}%</div>
       {showBar && <div className="tile-bar"><div className={`tile-bar-fill bar-${color}`} style={{width:`${pct}%`}}/></div>}
     </div>
@@ -825,12 +694,7 @@ function SummaryTile({ label, budget, actual, type, showBar }) {
 
 // ─── TRANSACTIONS TAB ─────────────────────────────────────────────────────────
 
-function TransactionsTab({
-  transactions, categories, merchantMemory, selectedMonth,
-  onPrevMonth, onNextMonth, onImport, onAddManual,
-  onUpdateTransaction, onDeleteTransaction, onClearMonth,
-  onBulkReCategorize, onCategoriesChange, onUpdateMerchantMemory, showToast,
-}) {
+function TransactionsTab({ transactions, categories, merchantMemory, selectedMonth, onPrevMonth, onNextMonth, onImport, onUpdateTransaction, onDeleteTransaction, onClearMonth, onBulkReCategorize, onCategoriesChange, onUpdateMerchantMemory, showToast }) {
   const [uploadAccount, setUploadAccount] = useState("sr_scotia_bank");
   const [filterAccount, setFilterAccount] = useState("");
   const [filterSection, setFilterSection] = useState("");
@@ -847,13 +711,15 @@ function TransactionsTab({
   const filtered = monthTxs
     .filter(t => !filterAccount || t.account===filterAccount)
     .filter(t => !filterSection || t.section===filterSection)
-    .filter(t => !search ||
-      t.description.toLowerCase().includes(search.toLowerCase()) ||
-      (t.mainCategory||"").toLowerCase().includes(search.toLowerCase()) ||
-      (t.subCategory||"").toLowerCase().includes(search.toLowerCase()) ||
-      (t.remarks||"").toLowerCase().includes(search.toLowerCase())
-    )
+    .filter(t => !search || t.description.toLowerCase().includes(search.toLowerCase()) || (t.mainCategory||"").toLowerCase().includes(search.toLowerCase()) || (t.subCategory||"").toLowerCase().includes(search.toLowerCase()) || (t.remarks||"").toLowerCase().includes(search.toLowerCase()))
     .sort((a,b) => new Date(b.date)-new Date(a.date));
+
+  // CC totals bar — only when filtering by a CC account
+  const isFilteredByCC = filterAccount && ACCOUNTS.find(a => a.id===filterAccount)?.type==="cc";
+  const ccNonTransfer  = isFilteredByCC ? filtered.filter(t => !t.isTransfer) : [];
+  const ccTotalSpent   = ccNonTransfer.filter(t => t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0);
+  const ccRefunds      = ccNonTransfer.filter(t => t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const ccNet          = ccTotalSpent - ccRefunds;
 
   const allMainCats = [
     ...categories.income.map(h   => ({ main:h.head, section:"income"   })),
@@ -863,56 +729,47 @@ function TransactionsTab({
   ];
 
   function getSubsFor(mainCat) {
-    const ih = categories.income.find(h   => h.head===mainCat); if (ih) return ih.subs;
-    const eh = categories.expenses.find(h => h.head===mainCat); if (eh) return eh.subs;
-    const sh = categories.savings.find(h  => h.head===mainCat); if (sh) return [sh.head];
+    const ih=categories.income.find(h=>h.head===mainCat);   if (ih) return ih.subs;
+    const eh=categories.expenses.find(h=>h.head===mainCat); if (eh) return eh.subs;
+    const sh=categories.savings.find(h=>h.head===mainCat);  if (sh) return [sh.head];
     if (mainCat==="TRANSFER") return ["CC Payment","Transfer — Exclude"];
     return [];
   }
 
   function handleFileSelect(e) {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => { onImport(ev.target.result, uploadAccount); };
-    reader.readAsText(file);
-    e.target.value = "";
+    const file=e.target.files[0]; if (!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{onImport(ev.target.result,uploadAccount);};
+    reader.readAsText(file); e.target.value="";
   }
 
   function handleCellEdit(txId, field, value) {
-    const tx = transactions.find(t => t.id===txId); if (!tx) return;
-    const updates = { [field]: value };
+    const tx=transactions.find(t=>t.id===txId); if (!tx) return;
+    const updates={[field]:value};
     if (field==="mainCategory") {
-      const found = allMainCats.find(c => c.main===value);
-      updates.section    = found?.section || "";
-      updates.isTransfer = found?.section==="transfer";
-      updates.subCategory = "";
+      const found=allMainCats.find(c=>c.main===value);
+      updates.section=found?.section||""; updates.isTransfer=found?.section==="transfer"; updates.subCategory="";
     }
-    onUpdateTransaction(txId, updates);
-
-    // Merchant memory + bulk apply when sub-category is set
+    onUpdateTransaction(txId,updates);
     if (field==="subCategory" && value && tx.mainCategory) {
-      const found   = allMainCats.find(c => c.main===tx.mainCategory);
-      const section = found?.section || tx.section;
-      const descKey = tx.description.toLowerCase().trim();
-      onUpdateMerchantMemory(descKey, { main:tx.mainCategory, sub:value, section });
-      const similar = transactions.filter(t =>
-        t.id!==txId &&
-        t.description.toLowerCase().trim()===descKey &&
-        (t.mainCategory!==tx.mainCategory || t.subCategory!==value)
-      ).length;
-      if (similar>0) setBulkPrompt({ description:tx.description, main:tx.mainCategory, sub:value, section, count:similar });
+      const found=allMainCats.find(c=>c.main===tx.mainCategory);
+      const section=found?.section||tx.section;
+      const descKey=tx.description.toLowerCase().trim();
+      onUpdateMerchantMemory(descKey,{main:tx.mainCategory,sub:value,section});
+      const similar=transactions.filter(t=>t.id!==txId&&t.description.toLowerCase().trim()===descKey&&(t.mainCategory!==tx.mainCategory||t.subCategory!==value)).length;
+      if (similar>0) setBulkPrompt({description:tx.description,main:tx.mainCategory,sub:value,section,count:similar});
     }
   }
 
-  const availableMonths = [...new Set(transactions.map(t=>t.month))].sort().reverse();
+  const availableMonths=[...new Set(transactions.map(t=>t.month))].sort().reverse();
 
   return (
     <div className="tab-pane">
       {bulkPrompt && (
         <div className="bulk-bar">
           <span>Apply <strong>{bulkPrompt.main} / {bulkPrompt.sub}</strong> to {bulkPrompt.count} similar transaction{bulkPrompt.count!==1?"s":""}?</span>
-          <button className="btn-ghost btn-sm" onClick={() => { onBulkReCategorize(bulkPrompt.description,bulkPrompt.main,bulkPrompt.sub,bulkPrompt.section); setBulkPrompt(null); }}>Apply All</button>
-          <button className="btn-ghost btn-sm" onClick={() => setBulkPrompt(null)}>Dismiss</button>
+          <button className="btn-ghost btn-sm" onClick={()=>{onBulkReCategorize(bulkPrompt.description,bulkPrompt.main,bulkPrompt.sub,bulkPrompt.section);setBulkPrompt(null);}}>Apply All</button>
+          <button className="btn-ghost btn-sm" onClick={()=>setBulkPrompt(null)}>Dismiss</button>
         </div>
       )}
 
@@ -923,27 +780,24 @@ function TransactionsTab({
           <button className="btn-ghost" onClick={onNextMonth}>▶</button>
         </div>
         <div className="top-actions">
-          <select className="sel" value={uploadAccount} onChange={e => setUploadAccount(e.target.value)}>
-            {ACCOUNTS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+          <select className="sel" value={uploadAccount} onChange={e=>setUploadAccount(e.target.value)}>
+            {ACCOUNTS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
           </select>
-          <button className="btn-ghost btn-sm" onClick={() => fileRef.current.click()}>⬆ Upload CSV</button>
+          <button className="btn-ghost btn-sm" onClick={()=>fileRef.current.click()}>⬆ Upload CSV</button>
           <input ref={fileRef} type="file" accept=".csv" style={{display:"none"}} onChange={handleFileSelect} />
-          <button className="btn-ghost btn-sm" onClick={() => onAddManual(selectedMonth, uploadAccount)}>+ Add</button>
-          <button className={`btn-ghost btn-sm${showCatMgr?" active":""}`} onClick={() => setShowCatMgr(s=>!s)}>⚙ Categories</button>
+          <button className={`btn-ghost btn-sm${showCatMgr?" active":""}`} onClick={()=>setShowCatMgr(s=>!s)}>⚙ Categories</button>
         </div>
       </div>
 
-      {showCatMgr && (
-        <CategoryManager categories={categories} onChange={onCategoriesChange} onClose={() => setShowCatMgr(false)} />
-      )}
+      {showCatMgr && <CategoryManager categories={categories} onChange={onCategoriesChange} onClose={()=>setShowCatMgr(false)} />}
 
       <div className="filter-bar">
-        <input className="inp" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="sel" value={filterAccount} onChange={e => setFilterAccount(e.target.value)}>
+        <input className="inp" placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)} />
+        <select className="sel" value={filterAccount} onChange={e=>setFilterAccount(e.target.value)}>
           <option value="">All accounts</option>
-          {ACCOUNTS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+          {ACCOUNTS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
         </select>
-        <select className="sel" value={filterSection} onChange={e => setFilterSection(e.target.value)}>
+        <select className="sel" value={filterSection} onChange={e=>setFilterSection(e.target.value)}>
           <option value="">All sections</option>
           <option value="income">Income</option>
           <option value="expenses">Expenses</option>
@@ -963,45 +817,58 @@ function TransactionsTab({
             <th style={{width:195}}>Account</th>
             <th>Description</th>
             <th style={{width:98,textAlign:"right"}}>Amount</th>
-            <th style={{width:140}}>Main Category</th>
-            <th style={{width:150}}>Sub Category</th>
+            <th style={{width:145}}>Main Category</th>
+            <th style={{width:152}}>Sub Category</th>
             <th style={{width:140}}>Remarks</th>
             <th style={{width:30}}></th>
           </tr></thead>
           <tbody>
             {filtered.length===0 && (
-              <tr><td colSpan={8} className="empty-cell">
-                {monthTxs.length===0
-                  ? "No transactions for this month. Select an account and upload a CSV."
-                  : "No transactions match the current filters."}
-              </td></tr>
+              <tr><td colSpan={8} className="empty-cell">{monthTxs.length===0?"No transactions for this month. Select an account and upload a CSV.":"No transactions match the current filters."}</td></tr>
             )}
             {filtered.map(tx => (
-              <TransactionRow key={tx.id} tx={tx}
-                allMainCats={allMainCats} getSubsFor={getSubsFor}
-                editingCell={editingCell} setEditingCell={setEditingCell}
-                onCellEdit={handleCellEdit} onDelete={onDeleteTransaction}
-              />
+              <TransactionRow key={tx.id} tx={tx} allMainCats={allMainCats} getSubsFor={getSubsFor} editingCell={editingCell} setEditingCell={setEditingCell} onCellEdit={handleCellEdit} onDelete={onDeleteTransaction} />
             ))}
           </tbody>
         </table>
       </div>
 
+      {/* CC Totals Bar — only visible when filtering by CC account */}
+      {isFilteredByCC && (
+        <div className="cc-totals-bar">
+          <div className="cc-totals-item">
+            <span className="cc-totals-label">Total Spent</span>
+            <span className="cc-totals-value c-red">{ccTotalSpent>0?fmt(ccTotalSpent):"—"}</span>
+          </div>
+          <div className="cc-totals-sep" />
+          <div className="cc-totals-item">
+            <span className="cc-totals-label">Refunds</span>
+            <span className="cc-totals-value c-green">{ccRefunds>0?`+${fmt(ccRefunds)}`:"—"}</span>
+          </div>
+          <div className="cc-totals-sep" />
+          <div className="cc-totals-item">
+            <span className="cc-totals-label">Net Spend</span>
+            <span className="cc-totals-value" style={{fontWeight:600}}>{fmt(ccNet)}</span>
+          </div>
+          <div className="cc-totals-sep" />
+          <div className="cc-totals-item">
+            <span className="cc-totals-label">Transactions</span>
+            <span className="cc-totals-value c-muted">{ccNonTransfer.length}</span>
+          </div>
+        </div>
+      )}
+
       <div className="card data-mgmt">
         <div className="data-mgmt-title">Data Management</div>
-        <div className="data-mgmt-sub">Clear transaction data by month only. No bulk delete available. Individual rows deletable via ✕.</div>
+        <div className="data-mgmt-sub">Clear transaction data by month only. Individual rows deletable via ✕.</div>
         <div className="data-mgmt-row">
-          <select className="sel" value={clearMonthSel} onChange={e => setClearMonthSel(e.target.value)}>
+          <select className="sel" value={clearMonthSel} onChange={e=>setClearMonthSel(e.target.value)}>
             <option value="">Select month to clear...</option>
-            {availableMonths.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+            {availableMonths.map(m=><option key={m} value={m}>{monthLabel(m)}</option>)}
           </select>
           <button className="btn-danger" disabled={!clearMonthSel}
-            onClick={() => {
-              if (clearMonthSel && window.confirm(`Clear ALL data for ${monthLabel(clearMonthSel)}? This cannot be undone.`)) {
-                onClearMonth(clearMonthSel); setClearMonthSel("");
-              }
-            }}>
-            Clear {clearMonthSel ? monthLabel(clearMonthSel) : "selected month"}
+            onClick={()=>{if(clearMonthSel&&window.confirm(`Clear ALL data for ${monthLabel(clearMonthSel)}?`)){onClearMonth(clearMonthSel);setClearMonthSel("");}}}>
+            Clear {clearMonthSel?monthLabel(clearMonthSel):"selected month"}
           </button>
         </div>
       </div>
@@ -1014,84 +881,38 @@ function TransactionsTab({
 function TransactionRow({ tx, allMainCats, getSubsFor, editingCell, setEditingCell, onCellEdit, onDelete }) {
   const isUncat = !tx.mainCategory && !tx.isTransfer;
   const isEdit  = f => editingCell?.txId===tx.id && editingCell?.field===f;
-  const start   = f => setEditingCell({ txId:tx.id, field:f });
+  const start   = f => setEditingCell({txId:tx.id,field:f});
   const stop    = () => setEditingCell(null);
 
   function CellText({ field, value, cls }) {
-    const [v, setV] = useState(value||"");
-    useEffect(() => setV(value||""), [value]);
-    if (isEdit(field)) return (
-      <input className="cell-inp" value={v} autoFocus
-        onChange={e=>setV(e.target.value)}
-        onBlur={() => { onCellEdit(tx.id,field,v); stop(); }}
-        onKeyDown={e => { if(e.key==="Enter") e.target.blur(); if(e.key==="Escape") stop(); }}
-      />
-    );
+    const [v,setV]=useState(value||"");
+    useEffect(()=>setV(value||""),[value]);
+    if (isEdit(field)) return <input className="cell-inp" value={v} autoFocus onChange={e=>setV(e.target.value)} onBlur={()=>{onCellEdit(tx.id,field,v);stop();}} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();if(e.key==="Escape")stop();}} />;
     return <span className={`cell-val${cls?" "+cls:""}`} onClick={()=>start(field)}>{value||<span className="cell-ph">—</span>}</span>;
   }
 
   function CellAmount() {
-    const [v, setV] = useState(String(tx.amount));
-    useEffect(() => setV(String(tx.amount)), [tx.amount]);
-    if (isEdit("amount")) return (
-      <input className="cell-inp right" value={v} autoFocus
-        onChange={e=>setV(e.target.value)}
-        onBlur={() => { const n=parseFloat(v); if(!isNaN(n)) onCellEdit(tx.id,"amount",n); stop(); }}
-        onKeyDown={e => { if(e.key==="Enter") e.target.blur(); }}
-      />
-    );
-    return <span className={`cell-val right ${tx.amount>=0?"c-green":"c-red"}`} onClick={()=>start("amount")}>
-      {tx.amount>=0?"+":"−"}{fmt(Math.abs(tx.amount))}
-    </span>;
+    const [v,setV]=useState(String(tx.amount));
+    useEffect(()=>setV(String(tx.amount)),[tx.amount]);
+    if (isEdit("amount")) return <input className="cell-inp right" value={v} autoFocus onChange={e=>setV(e.target.value)} onBlur={()=>{const n=parseFloat(v);if(!isNaN(n))onCellEdit(tx.id,"amount",n);stop();}} onKeyDown={e=>{if(e.key==="Enter")e.target.blur();}} />;
+    return <span className={`cell-val right ${tx.amount>=0?"c-green":"c-red"}`} onClick={()=>start("amount")}>{tx.amount>=0?"+":"−"}{fmt(Math.abs(tx.amount))}</span>;
   }
 
   function CellSelect({ field, value, options, onSelect }) {
-    if (isEdit(field)) return (
-      <select className="cell-sel" value={value||""} autoFocus
-        onChange={e => { onSelect(e.target.value); stop(); }} onBlur={stop}
-      >
-        <option value="">— select —</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
-    );
+    if (isEdit(field)) return <select className="cell-sel" value={value||""} autoFocus onChange={e=>{onSelect(e.target.value);stop();}} onBlur={stop}><option value="">— select —</option>{options.map(o=><option key={o} value={o}>{o}</option>)}</select>;
     return <span className={`cell-val${!value?" cell-ph":""}`} onClick={()=>start(field)}>{value||"—"}</span>;
   }
 
-  const subs = getSubsFor(tx.mainCategory);
-
   return (
     <tr className={`tx-row${isUncat?" uncat":""}`}>
-      <td>
-        {isEdit("date")
-          ? <input type="date" className="cell-inp" defaultValue={tx.date} autoFocus
-              onBlur={e=>{onCellEdit(tx.id,"date",e.target.value);stop();}} />
-          : <span className="cell-val date-val" onClick={()=>start("date")}>{shortDate(tx.date)}</span>
-        }
-      </td>
-      <td>
-        <CellSelect field="account" value={accountLabel(tx.account)}
-          options={ACCOUNTS.map(a=>a.label)}
-          onSelect={val => { const a=ACCOUNTS.find(x=>x.label===val); if(a) onCellEdit(tx.id,"account",a.id); }}
-        />
-      </td>
+      <td>{isEdit("date")?<input type="date" className="cell-inp" defaultValue={tx.date} autoFocus onBlur={e=>{onCellEdit(tx.id,"date",e.target.value);stop();}} />:<span className="cell-val date-val" onClick={()=>start("date")}>{shortDate(tx.date)}</span>}</td>
+      <td><CellSelect field="account" value={accountLabel(tx.account)} options={ACCOUNTS.map(a=>a.label)} onSelect={val=>{const a=ACCOUNTS.find(x=>x.label===val);if(a)onCellEdit(tx.id,"account",a.id);}} /></td>
       <td><CellText field="description" value={tx.description} /></td>
       <td><CellAmount /></td>
-      <td>
-        {isUncat && !isEdit("mainCategory")
-          ? <span className="uncat-badge" onClick={()=>start("mainCategory")}>⚠ Uncategorized</span>
-          : <CellSelect field="mainCategory" value={tx.mainCategory}
-              options={allMainCats.map(c=>c.main)}
-              onSelect={val=>onCellEdit(tx.id,"mainCategory",val)}
-            />
-        }
-      </td>
-      <td>
-        <CellSelect field="subCategory" value={tx.subCategory}
-          options={subs} onSelect={val=>onCellEdit(tx.id,"subCategory",val)}
-        />
-      </td>
+      <td>{isUncat&&!isEdit("mainCategory")?<span className="uncat-badge" onClick={()=>start("mainCategory")}>⚠ Uncategorized</span>:<CellSelect field="mainCategory" value={tx.mainCategory} options={allMainCats.map(c=>c.main)} onSelect={val=>onCellEdit(tx.id,"mainCategory",val)} />}</td>
+      <td><CellSelect field="subCategory" value={tx.subCategory} options={getSubsFor(tx.mainCategory)} onSelect={val=>onCellEdit(tx.id,"subCategory",val)} /></td>
       <td><CellText field="remarks" value={tx.remarks} cls="remarks-val" /></td>
-      <td><button className="btn-del" onClick={()=>onDelete(tx.id)} title="Delete">✕</button></td>
+      <td><button className="btn-del" onClick={()=>onDelete(tx.id)}>✕</button></td>
     </tr>
   );
 }
@@ -1100,84 +921,31 @@ function TransactionRow({ tx, allMainCats, getSubsFor, editingCell, setEditingCe
 
 function CategoryManager({ categories, onChange, onClose }) {
   const [local,   setLocal]   = useState(JSON.parse(JSON.stringify(categories)));
-  const [newHead, setNewHead] = useState({ income:"", expenses:"", savings:"" });
+  const [newHead, setNewHead] = useState({income:"",expenses:"",savings:""});
   const [newSub,  setNewSub]  = useState({});
 
-  const addHead = section => {
-    const v = newHead[section].trim(); if (!v) return;
-    if (section==="savings") setLocal(c=>({...c,savings:[...c.savings,{head:v,budget:0}]}));
-    else setLocal(c=>({...c,[section]:[...c[section],{head:v,subs:[],budget:{}}]}));
-    setNewHead(n=>({...n,[section]:""}));
-  };
-  const addSub = (section,hi) => {
-    const k=`${section}-${hi}`, v=(newSub[k]||"").trim(); if(!v) return;
-    setLocal(c=>{const u=JSON.parse(JSON.stringify(c));u[section][hi].subs.push(v);u[section][hi].budget[v]=0;return u;});
-    setNewSub(n=>({...n,[k]:""}));
-  };
-  const updateBudget = (section,hi,sub,val) => {
-    setLocal(c=>{const u=JSON.parse(JSON.stringify(c));
-      if(section==="savings") u.savings[hi].budget=parseFloat(val)||0;
-      else u[section][hi].budget[sub]=parseFloat(val)||0; return u;});
-  };
-  const removeHead = (section,hi) => setLocal(c=>{const u=JSON.parse(JSON.stringify(c));u[section].splice(hi,1);return u;});
-  const removeSub  = (section,hi,si) => setLocal(c=>{const u=JSON.parse(JSON.stringify(c));
-    const sub=u[section][hi].subs[si];u[section][hi].subs.splice(si,1);delete u[section][hi].budget[sub];return u;});
+  const addHead=(section)=>{const v=newHead[section].trim();if(!v)return;if(section==="savings")setLocal(c=>({...c,savings:[...c.savings,{head:v,budget:0}]}));else setLocal(c=>({...c,[section]:[...c[section],{head:v,subs:[],budget:{}}]}));setNewHead(n=>({...n,[section]:""}));};
+  const addSub=(section,hi)=>{const k=`${section}-${hi}`,v=(newSub[k]||"").trim();if(!v)return;setLocal(c=>{const u=JSON.parse(JSON.stringify(c));u[section][hi].subs.push(v);u[section][hi].budget[v]=0;return u;});setNewSub(n=>({...n,[k]:""}));};
+  const updateBudget=(section,hi,sub,val)=>{setLocal(c=>{const u=JSON.parse(JSON.stringify(c));if(section==="savings")u.savings[hi].budget=parseFloat(val)||0;else u[section][hi].budget[sub]=parseFloat(val)||0;return u;});};
+  const removeHead=(section,hi)=>setLocal(c=>{const u=JSON.parse(JSON.stringify(c));u[section].splice(hi,1);return u;});
+  const removeSub=(section,hi,si)=>setLocal(c=>{const u=JSON.parse(JSON.stringify(c));const sub=u[section][hi].subs[si];u[section][hi].subs.splice(si,1);delete u[section][hi].budget[sub];return u;});
 
   return (
     <div className="cat-mgr card">
-      <div className="cat-mgr-hdr">
-        <span className="cat-mgr-title">⚙ Manage Categories — changes propagate to all pages</span>
-        <button className="btn-ghost btn-sm" onClick={onClose}>✕ Close</button>
-      </div>
-      {["income","expenses","savings"].map(section => (
+      <div className="cat-mgr-hdr"><span className="cat-mgr-title">⚙ Manage Categories</span><button className="btn-ghost btn-sm" onClick={onClose}>✕ Close</button></div>
+      {["income","expenses","savings"].map(section=>(
         <div key={section} className="cat-section">
           <div className="cat-section-lbl">{section.charAt(0).toUpperCase()+section.slice(1)}</div>
-          {(section==="savings"?local.savings:local[section]).map((h,hi) => (
+          {(section==="savings"?local.savings:local[section]).map((h,hi)=>(
             <div key={hi} className="cat-head-block">
-              <div className="cat-head-row">
-                <span className="cat-head-name">{h.head}</span>
-                {section==="savings" && (
-                  <label className="cat-budget-pair">
-                    <span className="cat-budget-lbl">Budget $</span>
-                    <input className="inp budget-inp" type="number" value={h.budget} onChange={e=>updateBudget(section,hi,null,e.target.value)} />
-                  </label>
-                )}
-                <button className="btn-del" onClick={()=>removeHead(section,hi)}>✕</button>
-              </div>
-              {section!=="savings" && h.subs && (
-                <div className="cat-subs">
-                  {h.subs.map((sub,si) => (
-                    <div key={si} className="cat-sub-row">
-                      <span className="cat-sub-name">{sub}</span>
-                      <label className="cat-budget-pair">
-                        <span className="cat-budget-lbl">$</span>
-                        <input className="inp budget-inp" type="number" value={h.budget[sub]||0} onChange={e=>updateBudget(section,hi,sub,e.target.value)} />
-                      </label>
-                      <button className="btn-del" onClick={()=>removeSub(section,hi,si)}>✕</button>
-                    </div>
-                  ))}
-                  <div className="cat-add-row">
-                    <input className="inp" placeholder="New sub-category..." value={newSub[`${section}-${hi}`]||""}
-                      onChange={e=>setNewSub(n=>({...n,[`${section}-${hi}`]:e.target.value}))}
-                      onKeyDown={e=>e.key==="Enter"&&addSub(section,hi)} />
-                    <button className="btn-ghost btn-sm" onClick={()=>addSub(section,hi)}>+ Add Sub</button>
-                  </div>
-                </div>
-              )}
+              <div className="cat-head-row"><span className="cat-head-name">{h.head}</span>{section==="savings"&&<label className="cat-budget-pair"><span className="cat-budget-lbl">Budget $</span><input className="inp budget-inp" type="number" value={h.budget} onChange={e=>updateBudget(section,hi,null,e.target.value)}/></label>}<button className="btn-del" onClick={()=>removeHead(section,hi)}>✕</button></div>
+              {section!=="savings"&&h.subs&&<div className="cat-subs">{h.subs.map((sub,si)=>(<div key={si} className="cat-sub-row"><span className="cat-sub-name">{sub}</span><label className="cat-budget-pair"><span className="cat-budget-lbl">$</span><input className="inp budget-inp" type="number" value={h.budget[sub]||0} onChange={e=>updateBudget(section,hi,sub,e.target.value)}/></label><button className="btn-del" onClick={()=>removeSub(section,hi,si)}>✕</button></div>))}<div className="cat-add-row"><input className="inp" placeholder="New sub-category..." value={newSub[`${section}-${hi}`]||""} onChange={e=>setNewSub(n=>({...n,[`${section}-${hi}`]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addSub(section,hi)}/><button className="btn-ghost btn-sm" onClick={()=>addSub(section,hi)}>+ Add Sub</button></div></div>}
             </div>
           ))}
-          <div className="cat-add-row" style={{marginTop:8}}>
-            <input className="inp" placeholder={`New ${section} head...`} value={newHead[section]}
-              onChange={e=>setNewHead(n=>({...n,[section]:e.target.value}))}
-              onKeyDown={e=>e.key==="Enter"&&addHead(section)} />
-            <button className="btn-ghost btn-sm" onClick={()=>addHead(section)}>+ Add Head</button>
-          </div>
+          <div className="cat-add-row" style={{marginTop:8}}><input className="inp" placeholder={`New ${section} head...`} value={newHead[section]} onChange={e=>setNewHead(n=>({...n,[section]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addHead(section)}/><button className="btn-ghost btn-sm" onClick={()=>addHead(section)}>+ Add Head</button></div>
         </div>
       ))}
-      <div className="cat-mgr-footer">
-        <button className="btn-primary" onClick={()=>{onChange(local);onClose();}}>Save Changes</button>
-        <button className="btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-      </div>
+      <div className="cat-mgr-footer"><button className="btn-primary" onClick={()=>{onChange(local);onClose();}}>Save Changes</button><button className="btn-ghost btn-sm" onClick={onClose}>Cancel</button></div>
     </div>
   );
 }
@@ -1189,127 +957,119 @@ function InvestmentsTab({ investments, onInvestmentsChange, showToast }) {
   const fileRef = useRef();
 
   function handleFile(e) {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const rows = parseInvestmentCSV(ev.target.result, uploadAccount);
-      onInvestmentsChange(prev => [...prev.filter(r=>r.account!==uploadAccount), ...rows]);
+    const file=e.target.files[0]; if (!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const rows=parseInvestmentCSV(ev.target.result,uploadAccount);
+      onInvestmentsChange(prev=>[...prev.filter(r=>r.account!==uploadAccount),...rows]);
       showToast(`Imported ${rows.length} holdings for ${INVEST_ACCOUNTS.find(a=>a.id===uploadAccount)?.label}`);
-      e.target.value = "";
+      e.target.value="";
     };
     reader.readAsText(file);
   }
 
-  const grouped = {};
-  investments.forEach(inv => { if (!grouped[inv.account]) grouped[inv.account]=[]; grouped[inv.account].push(inv); });
-  const totalBook = investments.reduce((s,i)=>s+i.bookValue,0);
-  const totalMkt  = investments.reduce((s,i)=>s+i.marketValue,0);
-  const totalGain = totalMkt - totalBook;
+  const grouped={};
+  investments.forEach(inv=>{if(!grouped[inv.account])grouped[inv.account]=[];grouped[inv.account].push(inv);});
+  const totalBook=investments.reduce((s,i)=>s+i.bookValue,0);
+  const totalMkt=investments.reduce((s,i)=>s+i.marketValue,0);
+  const totalGain=totalMkt-totalBook;
 
   return (
     <div className="tab-pane">
       <div className="month-bar">
         <span className="month-label">Wealthsimple Portfolio</span>
         <div className="top-actions">
-          <select className="sel" value={uploadAccount} onChange={e=>setUploadAccount(e.target.value)}>
-            {INVEST_ACCOUNTS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
-          </select>
+          <select className="sel" value={uploadAccount} onChange={e=>setUploadAccount(e.target.value)}>{INVEST_ACCOUNTS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}</select>
           <button className="btn-ghost btn-sm" onClick={()=>fileRef.current.click()}>⬆ Upload CSV</button>
           <input ref={fileRef} type="file" accept=".csv" style={{display:"none"}} onChange={handleFile} />
         </div>
       </div>
       <div className="inv-cards">
-        {INVEST_ACCOUNTS.map(acc => {
-          const rows = grouped[acc.id]||[];
-          const book = rows.reduce((s,r)=>s+r.bookValue,0);
-          const mkt  = rows.reduce((s,r)=>s+r.marketValue,0);
-          const gain = mkt-book;
-          const pct  = book>0?((gain/book)*100).toFixed(1):"0.0";
-          return (
-            <div key={acc.id} className="inv-card">
-              <div className="inv-card-lbl">{acc.label}</div>
-              <div className={`inv-card-val ${mkt>0?"c-green":"c-muted"}`}>{mkt>0?fmt(mkt):"—"}</div>
-              {mkt>0 && <div className="inv-card-sub">Book {fmt(book)} · <span className={gain>=0?"c-green":"c-red"}>{gain>=0?"+":""}{fmt(gain)} ({pct}%)</span></div>}
-            </div>
-          );
+        {INVEST_ACCOUNTS.map(acc=>{
+          const rows=grouped[acc.id]||[],book=rows.reduce((s,r)=>s+r.bookValue,0),mkt=rows.reduce((s,r)=>s+r.marketValue,0),gain=mkt-book,pct=book>0?((gain/book)*100).toFixed(1):"0.0";
+          return (<div key={acc.id} className="inv-card"><div className="inv-card-lbl">{acc.label}</div><div className={`inv-card-val ${mkt>0?"c-green":"c-muted"}`}>{mkt>0?fmt(mkt):"—"}</div>{mkt>0&&<div className="inv-card-sub">Book {fmt(book)} · <span className={gain>=0?"c-green":"c-red"}>{gain>=0?"+":""}{fmt(gain)} ({pct}%)</span></div>}</div>);
         })}
       </div>
-      {totalMkt>0 && (
-        <div className="tile inv-total-tile">
-          <div className="tile-label">Total Portfolio</div>
-          <div className="tile-value c-green">{fmt(totalMkt)}</div>
-          <div className="tile-sub">Book {fmt(totalBook)} · <span className={totalGain>=0?"c-green":"c-red"}>{totalGain>=0?"+":""}{fmt(Math.abs(totalGain))} ({totalBook>0?((totalGain/totalBook)*100).toFixed(1):"0.0"}%)</span></div>
-        </div>
-      )}
-      {investments.length>0 ? (
+      {totalMkt>0&&<div className="tile inv-total-tile"><div className="tile-label">Total Portfolio</div><div className="tile-value c-green">{fmt(totalMkt)}</div><div className="tile-sub">Book {fmt(totalBook)} · <span className={totalGain>=0?"c-green":"c-red"}>{totalGain>=0?"+":""}{fmt(Math.abs(totalGain))}</span></div></div>}
+      {investments.length>0?(
         <div className="table-wrap card">
           <table className="tx-tbl">
-            <thead><tr>
-              <th>Account</th><th>Symbol</th><th>Holding</th>
-              <th style={{textAlign:"right",width:70}}>Qty</th>
-              <th style={{textAlign:"right",width:105}}>Book Value</th>
-              <th style={{textAlign:"right",width:110}}>Market Value</th>
-              <th style={{textAlign:"right",width:95}}>Gain / Loss</th>
-            </tr></thead>
+            <thead><tr><th>Account</th><th>Symbol</th><th>Holding</th><th style={{textAlign:"right",width:70}}>Qty</th><th style={{textAlign:"right",width:105}}>Book Value</th><th style={{textAlign:"right",width:110}}>Market Value</th><th style={{textAlign:"right",width:95}}>Gain / Loss</th></tr></thead>
             <tbody>
-              {investments.map(inv => {
-                const gain=inv.marketValue-inv.bookValue;
-                return (
-                  <tr key={inv.id} className="tx-row">
-                    <td><span className="acc-chip">{INVEST_ACCOUNTS.find(a=>a.id===inv.account)?.label||inv.account}</span></td>
-                    <td style={{fontWeight:500}}>{inv.symbol}</td>
-                    <td>{inv.name}</td>
-                    <td style={{textAlign:"right"}} className="c-muted">{inv.qty.toFixed(2)}</td>
-                    <td style={{textAlign:"right"}}>{fmtFull(inv.bookValue)}</td>
-                    <td style={{textAlign:"right",fontWeight:500}}>{fmtFull(inv.marketValue)}</td>
-                    <td style={{textAlign:"right"}} className={gain>=0?"c-green":"c-red"}>{gain>=0?"+":""}{fmtFull(gain)}</td>
-                  </tr>
-                );
-              })}
-              <tr className="tx-row total-row">
-                <td colSpan={4} style={{fontWeight:500}}>Total</td>
-                <td style={{textAlign:"right",fontWeight:500}}>{fmtFull(totalBook)}</td>
-                <td style={{textAlign:"right",fontWeight:500}}>{fmtFull(totalMkt)}</td>
-                <td style={{textAlign:"right",fontWeight:500}} className={totalGain>=0?"c-green":"c-red"}>{totalGain>=0?"+":""}{fmtFull(totalGain)}</td>
-              </tr>
+              {investments.map(inv=>{const gain=inv.marketValue-inv.bookValue;return(<tr key={inv.id} className="tx-row"><td><span className="acc-chip">{INVEST_ACCOUNTS.find(a=>a.id===inv.account)?.label||inv.account}</span></td><td style={{fontWeight:500}}>{inv.symbol}</td><td>{inv.name}</td><td style={{textAlign:"right"}} className="c-muted">{inv.qty.toFixed(2)}</td><td style={{textAlign:"right"}}>{fmtFull(inv.bookValue)}</td><td style={{textAlign:"right",fontWeight:500}}>{fmtFull(inv.marketValue)}</td><td style={{textAlign:"right"}} className={gain>=0?"c-green":"c-red"}>{gain>=0?"+":""}{fmtFull(gain)}</td></tr>);})}
+              <tr className="tx-row total-row"><td colSpan={4} style={{fontWeight:500}}>Total</td><td style={{textAlign:"right",fontWeight:500}}>{fmtFull(totalBook)}</td><td style={{textAlign:"right",fontWeight:500}}>{fmtFull(totalMkt)}</td><td style={{textAlign:"right",fontWeight:500}} className={totalGain>=0?"c-green":"c-red"}>{totalGain>=0?"+":""}{fmtFull(totalGain)}</td></tr>
             </tbody>
           </table>
         </div>
-      ) : (
-        <div className="empty-state">Upload your Wealthsimple CSV to view portfolio holdings</div>
-      )}
+      ):<div className="empty-state">Upload your Wealthsimple CSV to view portfolio holdings</div>}
     </div>
   );
 }
 
 // ─── ANNUAL TAB ───────────────────────────────────────────────────────────────
 
-const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-function AnnualTab({ transactions, categories, selectedYear, onPrevYear, onNextYear }) {
-  const now    = new Date();
-  const curMK  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-  const bI     = categories.income.reduce((s,h)   => s+Object.values(h.budget).reduce((a,b)=>a+b,0),0);
-  const bE     = categories.expenses.reduce((s,h)  => s+Object.values(h.budget).reduce((a,b)=>a+b,0),0);
-  const bS     = categories.savings.reduce((s,h)   => s+h.budget,0);
+function AnnualTab({ transactions, categories, accountBalances, selectedYear, onPrevYear, onNextYear }) {
+  const now   = new Date();
+  const curMK = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
 
-  const data = Array.from({length:12},(_,i) => {
-    const key  = `${selectedYear}-${String(i+1).padStart(2,"0")}`;
-    // Only categorized non-transfer transactions count
-    const txs  = transactions.filter(t=>t.month===key&&!t.isTransfer&&t.mainCategory&&t.section);
-    const inc  = txs.filter(t=>t.section==="income").reduce((s,t)=>s+Math.abs(t.amount),0);
-    const exp  = txs.filter(t=>t.section==="expenses").reduce((s,t)=>s+Math.abs(t.amount),0);
-    const sav  = txs.filter(t=>t.section==="savings").reduce((s,t)=>s+Math.abs(t.amount),0);
-    const hasTx = transactions.some(t=>t.month===key);
-    return { key, name:MONTH_NAMES[i], income:inc, expenses:exp, savings:sav, surplus:inc-exp-sav, hasTx };
-  });
+  // Build data for each month
+  const monthKeys = Array.from({length:12},(_,i)=>`${selectedYear}-${String(i+1).padStart(2,"0")}`);
 
-  const done     = data.filter(m=>m.hasTx&&m.key<=curMK);
-  const n        = done.length||1;
-  const yI       = done.reduce((s,m)=>s+m.income,0);
-  const yE       = done.reduce((s,m)=>s+m.expenses,0);
-  const yS       = done.reduce((s,m)=>s+m.savings,0);
-  const ySurplus = yI-yE-yS;
+  function monthData(key) {
+    const txs = transactions.filter(t => t.month===key && !t.isTransfer && t.mainCategory && t.section);
+    const srIncome  = txs.filter(t=>t.section==="income"&&t.mainCategory==="Simranvir Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
+    const nrIncome  = txs.filter(t=>t.section==="income"&&t.mainCategory==="Navneet Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
+    const totIncome = srIncome+nrIncome;
+    const totExp    = txs.filter(t=>t.section==="expenses").reduce((s,t)=>s+Math.abs(t.amount),0);
+    const srSav     = txs.filter(t=>t.section==="savings"&&SR_SAVINGS_HEADS.includes(t.mainCategory)).reduce((s,t)=>s+Math.abs(t.amount),0);
+    const nrSav     = txs.filter(t=>t.section==="savings"&&NR_SAVINGS_HEADS.includes(t.mainCategory)).reduce((s,t)=>s+Math.abs(t.amount),0);
+    const totSav    = srSav+nrSav;
+    const srBal     = accountBalances[`sr_scotia_bank-${key}`] || null;
+    const nrBal     = accountBalances[`nr_scotia_bank-${key}`] || null;
+    const totClose  = (srBal?.closing||0)+(nrBal?.closing||0);
+    const hasTx     = transactions.some(t=>t.month===key);
+    return { srIncome, nrIncome, totIncome, totExp, srSav, nrSav, totSav, srBal, nrBal, totClose, hasTx };
+  }
+
+  const data = monthKeys.map(k => ({ key:k, ...monthData(k) }));
+
+  // YTD — months with data up to current month
+  const ytd     = data.filter(m=>m.hasTx&&m.key<=curMK);
+  const ytdSRInc  = ytd.reduce((s,m)=>s+m.srIncome,0);
+  const ytdNRInc  = ytd.reduce((s,m)=>s+m.nrIncome,0);
+  const ytdInc    = ytdSRInc+ytdNRInc;
+  const ytdExp    = ytd.reduce((s,m)=>s+m.totExp,0);
+  const ytdSRSav  = ytd.reduce((s,m)=>s+m.srSav,0);
+  const ytdNRSav  = ytd.reduce((s,m)=>s+m.nrSav,0);
+  const ytdSav    = ytdSRSav+ytdNRSav;
+
+  // Latest closing balances
+  const latestWithBal = [...data].reverse().find(m=>m.srBal||m.nrBal);
+  const latestSRClose = latestWithBal?.srBal?.closing||0;
+  const latestNRClose = latestWithBal?.nrBal?.closing||0;
+
+  // Annual row definitions
+  const rows = [
+    { label:"SR Income",           section:"income",   getValue:m=>m.srIncome,  bold:false },
+    { label:"NR Income",           section:"income",   getValue:m=>m.nrIncome,  bold:false },
+    { label:"Total Income",        section:"income",   getValue:m=>m.totIncome, bold:true  },
+    { label:"Total Expenses",      section:"expenses", getValue:m=>m.totExp,    bold:true  },
+    { label:"SR Savings",          section:"savings",  getValue:m=>m.srSav,     bold:false },
+    { label:"NR Savings",          section:"savings",  getValue:m=>m.nrSav,     bold:false },
+    { label:"Total Savings",       section:"savings",  getValue:m=>m.totSav,    bold:true  },
+    { label:"SR Opening Balance",  section:"balance",  getValue:m=>m.srBal?.opening, bold:false },
+    { label:"SR Closing Balance",  section:"balance",  getValue:m=>m.srBal?.closing, bold:false },
+    { label:"NR Opening Balance",  section:"balance",  getValue:m=>m.nrBal?.opening, bold:false },
+    { label:"NR Closing Balance",  section:"balance",  getValue:m=>m.nrBal?.closing, bold:false },
+    { label:"Total Final Balance", section:"balance",  getValue:m=>(m.srBal||m.nrBal)?(m.srBal?.closing||0)+(m.nrBal?.closing||0):null, bold:true },
+  ];
+
+  const sectionColors = { income:"ann-income", expenses:"ann-expenses", savings:"ann-savings", balance:"ann-balance" };
+  const sectionLabels = { income:"Income", expenses:"Expenses", savings:"Saving", balance:"Net Balance" };
+
+  let prevSection = null;
 
   return (
     <div className="tab-pane">
@@ -1320,51 +1080,75 @@ function AnnualTab({ transactions, categories, selectedYear, onPrevYear, onNextY
           <button className="btn-ghost" onClick={onNextYear}>▶</button>
         </div>
       </div>
+
+      {/* YTD tiles */}
       <div className="tiles-row">
-        <div className="tile"><div className="tile-label">YTD Income</div>    <div className="tile-value c-green">{fmt(yI)}</div>              <div className="tile-sub">{done.length} months · avg {fmt(Math.round(yI/n))}/mo</div></div>
-        <div className="tile"><div className="tile-label">YTD Expenses</div>  <div className="tile-value c-red">{fmt(yE)}</div>                <div className="tile-sub">avg {fmt(Math.round(yE/n))}/mo</div></div>
-        <div className="tile"><div className="tile-label">YTD Savings</div>   <div className="tile-value c-green">{fmt(yS)}</div>              <div className="tile-sub">avg {fmt(Math.round(yS/n))}/mo</div></div>
-        <div className="tile"><div className="tile-label">YTD Surplus</div>   <div className={`tile-value ${ySurplus>=0?"c-green":"c-red"}`}>{fmt(ySurplus)}</div><div className="tile-sub">avg {fmt(Math.round(ySurplus/n))}/mo</div></div>
+        <div className="tile"><div className="tile-label">YTD SR Income</div>  <div className="tile-value c-green">{fmt(ytdSRInc)}</div></div>
+        <div className="tile"><div className="tile-label">YTD NR Income</div>  <div className="tile-value c-green">{fmt(ytdNRInc)}</div></div>
+        <div className="tile"><div className="tile-label">YTD Total Income</div><div className="tile-value c-green">{fmt(ytdInc)}</div></div>
+        <div className="tile"><div className="tile-label">YTD Expenses</div>   <div className="tile-value c-red">{fmt(ytdExp)}</div></div>
+        <div className="tile"><div className="tile-label">YTD SR Savings</div> <div className="tile-value c-green">{fmt(ytdSRSav)}</div></div>
+        <div className="tile"><div className="tile-label">YTD NR Savings</div> <div className="tile-value c-green">{fmt(ytdNRSav)}</div></div>
+        <div className="tile"><div className="tile-label">Latest Closing</div>  <div className="tile-value" style={{fontWeight:700}}>{fmt(latestSRClose+latestNRClose)}</div><div className="tile-sub">SR {fmt(latestSRClose)} · NR {fmt(latestNRClose)}</div></div>
       </div>
-      <div className="table-wrap card">
-        <table className="tx-tbl annual-tbl">
-          <thead><tr>
-            <th style={{textAlign:"left",width:90}}>Month</th>
-            <th style={{textAlign:"right"}}>Budget Income</th>
-            <th style={{textAlign:"right"}}>Actual Income</th>
-            <th style={{textAlign:"right"}}>Budget Expense</th>
-            <th style={{textAlign:"right"}}>Actual Expense</th>
-            <th style={{textAlign:"right"}}>Budget Savings</th>
-            <th style={{textAlign:"right"}}>Actual Savings</th>
-            <th style={{textAlign:"right"}}>Surplus</th>
-          </tr></thead>
-          <tbody>
-            {data.map(m => {
-              const isCur = m.key===curMK;
-              const isFut = m.key>curMK&&!m.hasTx;
-              return (
-                <tr key={m.key} className={`tx-row${isCur?" current-month":""}${isFut?" future-month":""}`}>
-                  <td style={{fontWeight:isCur?600:400}}>{m.name.slice(0,3)}{isCur&&<span className="current-dot"> ●</span>}</td>
-                  <td style={{textAlign:"right"}} className="c-muted">{fmt(bI)}</td>
-                  <td style={{textAlign:"right"}} className={m.hasTx?colorCls(getActualColor(m.income,bI,"income")):"c-muted"}>{m.hasTx?fmt(m.income):"—"}</td>
-                  <td style={{textAlign:"right"}} className="c-muted">{fmt(bE)}</td>
-                  <td style={{textAlign:"right"}} className={m.hasTx?colorCls(getActualColor(m.expenses,bE,"expense")):"c-muted"}>{m.hasTx?fmt(m.expenses):"—"}</td>
-                  <td style={{textAlign:"right"}} className="c-muted">{fmt(bS)}</td>
-                  <td style={{textAlign:"right"}} className={m.hasTx?colorCls(getActualColor(m.savings,bS,"savings")):"c-muted"}>{m.hasTx?fmt(m.savings):"—"}</td>
-                  <td style={{textAlign:"right"}} className={m.hasTx?(m.surplus>=0?"c-green":"c-red"):"c-muted"}>{m.hasTx?fmt(m.surplus):"—"}</td>
-                </tr>
-              );
-            })}
-            <tr className="tx-row total-row">
-              <td style={{fontWeight:600}}>YTD</td>
-              <td style={{textAlign:"right"}} className="c-muted">{fmt(bI*done.length)}</td>
-              <td style={{textAlign:"right",fontWeight:500}} className="c-green">{fmt(yI)}</td>
-              <td style={{textAlign:"right"}} className="c-muted">{fmt(bE*done.length)}</td>
-              <td style={{textAlign:"right",fontWeight:500}} className={yE<=bE*done.length?"c-green":"c-red"}>{fmt(yE)}</td>
-              <td style={{textAlign:"right"}} className="c-muted">{fmt(bS*done.length)}</td>
-              <td style={{textAlign:"right",fontWeight:500}} className="c-green">{fmt(yS)}</td>
-              <td style={{textAlign:"right",fontWeight:500}} className={ySurplus>=0?"c-green":"c-red"}>{fmt(ySurplus)}</td>
+
+      {/* Annual table — categories as rows, months as columns */}
+      <div className="table-wrap card annual-pivot-wrap">
+        <table className="tx-tbl annual-pivot">
+          <thead>
+            <tr>
+              <th className="ann-sticky-col" style={{textAlign:"left"}}>Category</th>
+              {MONTH_NAMES.map((mn,i) => {
+                const key=monthKeys[i];
+                const isCur=key===curMK;
+                const isFut=key>curMK&&!data[i].hasTx;
+                return (
+                  <th key={mn} style={{textAlign:"right",minWidth:72}} className={isCur?"ann-cur-col":isFut?"ann-fut-col":""}>
+                    {mn}{isCur&&<span className="current-dot"> ●</span>}
+                  </th>
+                );
+              })}
+              <th style={{textAlign:"right",minWidth:80}}>Total</th>
             </tr>
+          </thead>
+          <tbody>
+            {rows.map((row,ri) => {
+              const showSectionHeader = row.section !== prevSection;
+              prevSection = row.section;
+              const sectionCls = sectionColors[row.section]||"";
+              const rowTotal = data.filter(m=>m.hasTx).reduce((s,m)=>{const v=row.getValue(m);return s+(v||0);},0);
+
+              return [
+                showSectionHeader && (
+                  <tr key={`sec-${row.section}`} className={`ann-section-hdr ${sectionCls}`}>
+                    <td colSpan={14} className="ann-sticky-col ann-section-label">{sectionLabels[row.section]}</td>
+                  </tr>
+                ),
+                <tr key={ri} className={`tx-row ann-data-row ${sectionCls}`}>
+                  <td className={`ann-sticky-col ann-row-label${row.bold?" ann-bold":""}`}>{row.label}</td>
+                  {data.map((m,mi) => {
+                    const val    = row.getValue(m);
+                    const isCur  = m.key===curMK;
+                    const isFut  = m.key>curMK&&!m.hasTx;
+                    const hasVal = val !== null && val !== undefined && !isNaN(val);
+                    return (
+                      <td key={mi} style={{textAlign:"right"}} className={`${isFut?"ann-fut-col":""}`}>
+                        {hasVal && m.hasTx
+                          ? <span className={`${row.bold?"ann-bold":""} ${isCur?"ann-cur-val":""}`}>{fmt(val)}</span>
+                          : <span className="c-muted">—</span>
+                        }
+                      </td>
+                    );
+                  })}
+                  <td style={{textAlign:"right"}}>
+                    {rowTotal>0
+                      ? <span className={row.bold?"ann-bold":""}>{fmt(rowTotal)}</span>
+                      : <span className="c-muted">—</span>
+                    }
+                  </td>
+                </tr>
+              ];
+            })}
           </tbody>
         </table>
       </div>

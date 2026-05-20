@@ -18,11 +18,22 @@
   --blue:    #60a5fa;
   --accent:  #7c6af0;
   --accent2: #5c4dd6;
-  --radius:  10px;
+  --radius:    10px;
   --radius-sm: 6px;
   --radius-lg: 14px;
-  --font:    'Syne', sans-serif;
-  --mono:    'DM Mono', monospace;
+  --font: 'Syne', sans-serif;
+  --mono: 'DM Mono', monospace;
+
+  /* Annual section colors */
+  --ann-income:   rgba(96, 148, 250, 0.07);
+  --ann-expenses: rgba(255, 107, 107, 0.07);
+  --ann-savings:  rgba(61, 220, 132, 0.07);
+  --ann-balance:  rgba(180, 180, 200, 0.06);
+
+  --ann-income-hdr:   rgba(96, 148, 250, 0.18);
+  --ann-expenses-hdr: rgba(255, 107, 107, 0.18);
+  --ann-savings-hdr:  rgba(61, 220, 132, 0.18);
+  --ann-balance-hdr:  rgba(180, 180, 200, 0.14);
 }
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
@@ -30,10 +41,10 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); font-si
 button,input,select,textarea { font-family:var(--font); font-size:13px; color:inherit; }
 
 .app-root { min-height:100vh; display:flex; flex-direction:column; }
-.tab-content { flex:1; max-width:1100px; width:100%; margin:0 auto; padding:0 16px 48px; }
+.tab-content { flex:1; max-width:1200px; width:100%; margin:0 auto; padding:0 16px 48px; }
 
 /* TAB BAR */
-.tab-bar { display:flex; gap:2px; padding:12px 24px 0; border-bottom:1px solid var(--border); background:var(--bg); position:sticky; top:0; z-index:50; max-width:1100px; margin:0 auto; width:100%; }
+.tab-bar { display:flex; gap:2px; padding:12px 24px 0; border-bottom:1px solid var(--border); background:var(--bg); position:sticky; top:0; z-index:50; max-width:1200px; margin:0 auto; width:100%; }
 .tab-btn { display:flex; align-items:center; gap:6px; padding:9px 16px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:13px; font-weight:500; color:var(--text2); letter-spacing:.02em; position:relative; transition:color .15s,border-color .15s; margin-bottom:-1px; }
 .tab-btn:hover { color:var(--text); }
 .tab-btn.active { color:var(--text); border-bottom-color:var(--accent); }
@@ -68,24 +79,24 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 /* INPUTS */
 .inp { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:6px 10px; color:var(--text); font-size:12px; outline:none; transition:border-color .15s; }
 .inp:focus { border-color:var(--accent); }
-.sel { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:6px 8px; color:var(--text); font-size:12px; outline:none; cursor:pointer; transition:border-color .15s; }
+.sel { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:6px 8px; color:var(--text); font-size:12px; outline:none; cursor:pointer; }
 .sel:focus { border-color:var(--accent); }
 .budget-inp { width:80px; font-family:var(--mono); text-align:right; }
 
 /* TILES */
 .tiles-row { display:flex; gap:10px; flex-wrap:wrap; }
-.tile { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; flex:1; min-width:140px; }
+.tile { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; flex:1; min-width:130px; }
 .tile-label { font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--text2); margin-bottom:6px; font-weight:500; }
-.tile-value { font-size:22px; font-weight:700; font-family:var(--mono); letter-spacing:-.02em; margin-bottom:4px; }
+.tile-value { font-size:20px; font-weight:700; font-family:var(--mono); letter-spacing:-.02em; margin-bottom:4px; }
 .tile-sub { font-size:11px; color:var(--text2); }
 .tile-bar { height:3px; background:var(--bg4); border-radius:99px; margin-top:8px; overflow:hidden; }
 .tile-bar-fill { height:3px; border-radius:99px; transition:width .4s ease; }
-.bar-green  { background:var(--green); }
-.bar-amber  { background:var(--amber); }
-.bar-red    { background:var(--red);   }
-.bar-neutral{ background:var(--text3); }
+.bar-green   { background:var(--green); }
+.bar-amber   { background:var(--amber); }
+.bar-red     { background:var(--red);   }
+.bar-neutral { background:var(--text3); }
 
-/* COLOR CLASSES */
+/* COLORS */
 .c-green { color:var(--green) !important; }
 .c-amber { color:var(--amber) !important; }
 .c-red   { color:var(--red)   !important; }
@@ -102,11 +113,11 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .bank-col  { min-width:100px; text-align:right; font-size:12px; font-family:var(--mono); }
 
 /* ACCORDION */
-.acc-col-header { display:flex; align-items:center; padding:9px 16px; background:var(--bg3); border-bottom:1px solid var(--border); }
-.acc-label-col  { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.acc-num-col    { min-width:100px; text-align:right; font-family:var(--mono); font-size:13px; flex-shrink:0; }
-.acc-num-col.hdr{ font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:var(--text3); font-family:var(--font); }
-.acc-section-row{ display:flex; align-items:center; gap:8px; padding:9px 16px; background:var(--bg3); border-top:1px solid var(--border); }
+.acc-col-header  { display:flex; align-items:center; padding:9px 16px; background:var(--bg3); border-bottom:1px solid var(--border); }
+.acc-label-col   { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.acc-num-col     { min-width:100px; text-align:right; font-family:var(--mono); font-size:13px; flex-shrink:0; }
+.acc-num-col.hdr { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:var(--text3); font-family:var(--font); }
+.acc-section-row { display:flex; align-items:center; gap:8px; padding:9px 16px; background:var(--bg3); border-top:1px solid var(--border); }
 .acc-section-row:first-child { border-top:none; }
 .acc-section-row.clickable   { cursor:pointer; }
 .acc-section-row.clickable:hover { background:var(--bg4); }
@@ -152,6 +163,13 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .uncat-badge:hover { background:rgba(255,107,107,.18); }
 .empty-cell { text-align:center; color:var(--text3); padding:40px 20px; font-size:13px; }
 
+/* CC TOTALS BAR */
+.cc-totals-bar { display:flex; align-items:center; gap:0; background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius); overflow:hidden; }
+.cc-totals-item { display:flex; flex-direction:column; align-items:center; padding:14px 24px; flex:1; }
+.cc-totals-sep  { width:1px; height:40px; background:var(--border2); flex-shrink:0; }
+.cc-totals-label{ font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--text2); font-weight:500; margin-bottom:5px; }
+.cc-totals-value{ font-size:20px; font-weight:700; font-family:var(--mono); letter-spacing:-.02em; }
+
 /* BULK BAR */
 .bulk-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:rgba(96,165,250,.07); border:1px solid rgba(96,165,250,.25); border-radius:var(--radius); padding:10px 14px; font-size:13px; }
 .bulk-bar strong { color:var(--blue); }
@@ -183,11 +201,42 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .inv-total-tile { max-width:280px; }
 .acc-chip { display:inline-block; font-size:11px; padding:2px 7px; border-radius:99px; background:var(--bg4); border:1px solid var(--border2); color:var(--text2); white-space:nowrap; }
 
-/* ANNUAL */
-.annual-tbl th,.annual-tbl td { padding:8px 12px; }
-.current-month td { background:rgba(124,106,240,.05) !important; }
-.current-dot      { color:var(--accent); }
-.future-month     { opacity:.4; }
+/* ANNUAL TAB — PIVOT TABLE */
+.annual-pivot-wrap { overflow-x:auto; }
+.annual-pivot { width:100%; border-collapse:collapse; font-size:12px; min-width:900px; }
+.annual-pivot th { padding:8px 10px; text-align:right; font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:var(--text3); border-bottom:1px solid var(--border); background:var(--bg3); white-space:nowrap; }
+.annual-pivot td { padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle; font-family:var(--mono); font-size:12px; }
+
+/* Sticky first column */
+.ann-sticky-col { position:sticky; left:0; background:var(--bg2); z-index:2; text-align:left !important; font-family:var(--font) !important; font-size:12px; min-width:160px; white-space:nowrap; }
+.annual-pivot th.ann-sticky-col { background:var(--bg3); z-index:3; }
+
+/* Section headers */
+.ann-section-hdr td { padding:5px 10px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+.ann-section-label { font-family:var(--font) !important; }
+
+/* Section colors */
+.ann-income   { background:var(--ann-income);   }
+.ann-expenses { background:var(--ann-expenses);  }
+.ann-savings  { background:var(--ann-savings);   }
+.ann-balance  { background:var(--ann-balance);   }
+
+.ann-section-hdr.ann-income   { background:var(--ann-income-hdr);   }
+.ann-section-hdr.ann-expenses { background:var(--ann-expenses-hdr); }
+.ann-section-hdr.ann-savings  { background:var(--ann-savings-hdr);  }
+.ann-section-hdr.ann-balance  { background:var(--ann-balance-hdr);  }
+
+.ann-income   .ann-sticky-col { background:var(--ann-income);   }
+.ann-expenses .ann-sticky-col { background:var(--ann-expenses);  }
+.ann-savings  .ann-sticky-col { background:var(--ann-savings);   }
+.ann-balance  .ann-sticky-col { background:var(--ann-balance);   }
+
+.ann-row-label { color:var(--text2); }
+.ann-bold      { font-weight:600 !important; color:var(--text) !important; }
+.ann-cur-col   { background:rgba(124,106,240,.08) !important; }
+.ann-fut-col   { opacity:.4; }
+.ann-cur-val   { color:var(--accent) !important; }
+.ann-data-row:hover td { filter:brightness(1.08); }
 
 /* DATA MANAGEMENT */
 .data-mgmt { padding:14px 16px; }
@@ -211,6 +260,7 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 
 /* EMPTY STATE */
 .empty-state { text-align:center; padding:48px 24px; color:var(--text3); font-size:13px; }
+.current-dot { color:var(--accent); }
 
 /* SCROLLBAR */
 ::-webkit-scrollbar       { width:6px; height:6px; }
@@ -228,4 +278,6 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
   .tile-value { font-size:18px; }
   .tab-content { padding:0 10px 32px; }
   .filter-bar .inp { width:140px; }
+  .cc-totals-item { padding:12px 14px; }
+  .cc-totals-value { font-size:16px; }
 }
