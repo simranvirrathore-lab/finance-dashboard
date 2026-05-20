@@ -623,6 +623,19 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
   const srTxs = monthTxs.filter(t => t.account==="sr_scotia_bank");
   const nrTxs = monthTxs.filter(t => t.account==="nr_scotia_bank");
 
+  // Opening = previous month's closing for continuity
+  function getDisplayBalInfo(accountId) {
+    const stored = accountBalances[`${accountId}-${selectedMonth}`];
+    if (!stored) return null;
+    const [y, m] = selectedMonth.split("-").map(Number);
+    const prevKey   = m === 1 ? `${y-1}-12` : `${y}-${String(m-1).padStart(2,"0")}`;
+    const prevClose = accountBalances[`${accountId}-${prevKey}`]?.closing;
+    return {
+      opening: prevClose !== undefined ? prevClose : stored.opening,
+      closing: stored.closing,
+    };
+  }
+
   return (
     <div className="tab-pane">
       <div className="month-bar no-print">
@@ -643,8 +656,8 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           <span className="col-hdr">Debits</span>
           <span className="col-hdr">Closing</span>
         </div>
-        <BankRow label="SR Scotia Bank" txs={srTxs} balInfo={accountBalances[`sr_scotia_bank-${selectedMonth}`]} />
-        <BankRow label="NR Scotia Bank" txs={nrTxs} balInfo={accountBalances[`nr_scotia_bank-${selectedMonth}`]} isLast />
+        <BankRow label="SR Scotia Bank" txs={srTxs} balInfo={getDisplayBalInfo("sr_scotia_bank")} />
+        <BankRow label="NR Scotia Bank" txs={nrTxs} balInfo={getDisplayBalInfo("nr_scotia_bank")} isLast />
       </div>
 
       <div className="tiles-row">
@@ -1110,8 +1123,21 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
 
   const monthKeys = Array.from({length:12},(_,i)=>`${selectedYear}-${String(i+1).padStart(2,"0")}`);
 
+  // Opening = previous month's closing (ensures continuity across months)
+  function getBalInfo(accountId, key) {
+    const stored = accountBalances[`${accountId}-${key}`];
+    if (!stored) return null;
+    const [y, m] = key.split("-").map(Number);
+    const prevKey  = m === 1 ? `${y-1}-12` : `${y}-${String(m-1).padStart(2,"0")}`;
+    const prevClose = accountBalances[`${accountId}-${prevKey}`]?.closing;
+    return {
+      opening: prevClose !== undefined ? prevClose : stored.opening,
+      closing: stored.closing,
+    };
+  }
+
   function monthData(key) {
-    const txs     = transactions.filter(t => t.month===key && !t.isTransfer && t.mainCategory && t.section);
+    const txs       = transactions.filter(t => t.month===key && !t.isTransfer && t.mainCategory && t.section);
     const srIncome  = txs.filter(t=>t.section==="income"&&t.mainCategory==="Simranvir Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
     const nrIncome  = txs.filter(t=>t.section==="income"&&t.mainCategory==="Navneet Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
     const totIncome = srIncome+nrIncome;
@@ -1119,8 +1145,8 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
     const srSav     = txs.filter(t=>t.section==="savings"&&SR_SAVINGS_HEADS.includes(t.mainCategory)).reduce((s,t)=>s+Math.abs(t.amount),0);
     const nrSav     = txs.filter(t=>t.section==="savings"&&NR_SAVINGS_HEADS.includes(t.mainCategory)).reduce((s,t)=>s+Math.abs(t.amount),0);
     const totSav    = srSav+nrSav;
-    const srBal     = accountBalances[`sr_scotia_bank-${key}`] || null;
-    const nrBal     = accountBalances[`nr_scotia_bank-${key}`] || null;
+    const srBal     = getBalInfo("sr_scotia_bank", key);
+    const nrBal     = getBalInfo("nr_scotia_bank", key);
     const hasTx     = transactions.some(t=>t.month===key);
     return { srIncome, nrIncome, totIncome, totExp, srSav, nrSav, totSav, srBal, nrBal, hasTx };
   }
@@ -1210,10 +1236,10 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
               <th className="ann-sticky-col" style={{textAlign:"left"}}>Category</th>
               {MONTH_NAMES.map((mn,i) => {
                 const key=monthKeys[i], isCur=key===curMK, isFut=key>curMK&&!data[i].hasTx;
-                return <th key={mn} style={{textAlign:"right",minWidth:72}} className={isCur?"ann-cur-col":isFut?"ann-fut-col":""}>{mn}{isCur&&<span className="current-dot"> ●</span>}</th>;
+                return <th key={mn} style={{textAlign:"right",minWidth:58}} className={isCur?"ann-cur-col":isFut?"ann-fut-col":""}>{mn}{isCur&&<span className="current-dot"> ●</span>}</th>;
               })}
-              <th style={{textAlign:"right",minWidth:80}}>Total</th>
-              <th style={{textAlign:"right",minWidth:80}}>Avg/mo</th>
+              <th style={{textAlign:"right",minWidth:68}}>Total</th>
+              <th style={{textAlign:"right",minWidth:68}}>Avg/mo</th>
             </tr>
           </thead>
           <tbody>
@@ -1275,7 +1301,7 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
                 return (
                   <td key={i} style={{textAlign:"right"}} className={isFut?"ann-fut-col":""}>
                     {change!==null
-                      ? <span className={`ann-bold ${isCur?"ann-cur-val":""} ${change>=0?"c-green":"c-red"}`}>
+                      ? <span style={{fontWeight:600, color: change>=0?"var(--green)":"var(--red)"}}>
                           {change>=0?"+":""}{fmt(Math.abs(change))}
                         </span>
                       : <span className="c-muted">—</span>
@@ -1289,7 +1315,7 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
                   const validChanges = balanceChanges.filter(c=>c!==null);
                   if (validChanges.length===0) return <span className="c-muted">—</span>;
                   const avg = Math.round(validChanges.reduce((s,c)=>s+c,0)/validChanges.length);
-                  return <span className={`c-muted`}>{avg>=0?"+":""}{fmt(Math.abs(avg))}</span>;
+                  return <span style={{color: avg>=0?"var(--green)":"var(--red)", fontWeight:500}}>{avg>=0?"+":""}{fmt(Math.abs(avg))}</span>;
                 })()}
               </td>
             </tr>
