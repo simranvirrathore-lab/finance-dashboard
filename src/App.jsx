@@ -20,6 +20,10 @@ const INVEST_ACCOUNTS = [
   { id: "nr_rrsp",       label: "NR RRSP"         },
 ];
 
+const CC_ACCOUNT_IDS  = ["sr_scotia_visa", "sr_cibc_mc", "sr_tangerine"];
+const SR_SAVINGS_HEADS = ["SR FHSA", "SR TFSA"];
+const NR_SAVINGS_HEADS = ["NR FHSA", "NR RRSP", "Gurshaan RESP", "Gurnadar RESP"];
+
 // ─── DEFAULT CATEGORIES ──────────────────────────────────────────────────────
 
 const DEFAULT_CATEGORIES = {
@@ -36,7 +40,7 @@ const DEFAULT_CATEGORIES = {
     },
   ],
   expenses: [
-    { head: "Home",           subs: ["Rent", "Utilities"],                                                                                                                    budget: { Rent: 3000, Utilities: 0 } },
+    { head: "Home",           subs: ["Rent", "Utilities"],                                                                                                                    budget: { Rent: 3000, Utilities: 350 } },
     { head: "Transportation", subs: ["Tesla Loan", "Tesla ICBC", "Van ICBC", "ICBC Annual Renewal", "Gas", "Tesla App", "Rideshare", "Car Maintenance", "Parking"],           budget: { "Tesla Loan": 644, "Tesla ICBC": 289, "Van ICBC": 180, "ICBC Annual Renewal": 0, Gas: 250, "Tesla App": 16, Rideshare: 0, "Car Maintenance": 0, Parking: 0 } },
     { head: "Family",         subs: ["Gurshaan School Fees", "Gurnadar Daycare", "Baby Supplies", "Kids Activities"],                                                         budget: { "Gurshaan School Fees": 450, "Gurnadar Daycare": 850, "Baby Supplies": 100, "Kids Activities": 50 } },
     { head: "Debt & Banking", subs: ["Student Loan", "Bank Fees"],                                                                                                            budget: { "Student Loan": 153, "Bank Fees": 17 } },
@@ -57,21 +61,45 @@ const DEFAULT_CATEGORIES = {
   ],
 };
 
-const SR_SAVINGS_HEADS = ["SR FHSA", "SR TFSA"];
-const NR_SAVINGS_HEADS = ["NR FHSA", "NR RRSP", "Gurshaan RESP", "Gurnadar RESP"];
+// ─── BUDGET HELPERS ───────────────────────────────────────────────────────────
+
+// Get effective budget for a sub-category in a given month
+// Priority: monthly override → standard template
+function getEffectiveBudget(subKey, monthKey, categories, monthlyOverrides) {
+  const override = monthlyOverrides?.[monthKey]?.[subKey];
+  if (override !== undefined) return override;
+  // Find in standard template
+  for (const h of [...categories.income, ...categories.expenses]) {
+    if (h.budget?.[subKey] !== undefined) return h.budget[subKey];
+  }
+  for (const s of categories.savings) {
+    if (s.head === subKey) return s.budget;
+  }
+  return 0;
+}
+
+function getHeadBudget(head, monthKey, categories, monthlyOverrides) {
+  const found =
+    categories.income.find(h => h.head === head) ||
+    categories.expenses.find(h => h.head === head);
+  if (found) {
+    return found.subs.reduce((s, sub) => s + getEffectiveBudget(sub, monthKey, categories, monthlyOverrides), 0);
+  }
+  const sav = categories.savings.find(h => h.head === head);
+  if (sav) return getEffectiveBudget(head, monthKey, categories, monthlyOverrides);
+  return 0;
+}
 
 // ─── AUTO-CATEGORIZATION ─────────────────────────────────────────────────────
 
 function autoCategorize(description, subDescription, amount, accountId, merchantMemory = {}) {
-  const desc    = (description    || "").toLowerCase().trim();
-  const sub     = (subDescription || "").toLowerCase().trim();
-  const abs     = Math.abs(amount);
+  const desc     = (description    || "").toLowerCase().trim();
+  const sub      = (subDescription || "").toLowerCase().trim();
+  const abs      = Math.abs(amount);
   const isCCAcct = ACCOUNTS.find(a => a.id === accountId)?.type === "cc";
 
-  // 1. Merchant memory — always wins
   if (merchantMemory[desc]) return merchantMemory[desc];
 
-  // 2. MB-DEP — direct deposit
   if (/mb-dep|mb dep/.test(desc)) {
     if (accountId === "sr_scotia_bank")
       return abs > 300
@@ -81,7 +109,6 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
       return { main: "Navneet Rathore", sub: "NR DS Paycheck", section: "income" };
   }
 
-  // 3. Sub-description rules (bank CSVs)
   if (/delta.sd/i.test(sub))                                    return { main: "Navneet Rathore", sub: "NR DS Paycheck",       section: "income"   };
   if (/pacific.blue.cross/i.test(sub))                          return { main: "Navneet Rathore", sub: "Other Income",         section: "income"   };
   if (/\bcanada\b/i.test(sub) && /fed-prov|terr/i.test(desc))  return { main: "Navneet Rathore", sub: "Canada Child Benefit", section: "income"   };
@@ -93,7 +120,6 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
   if (/monthly.fees/i.test(sub))                                return { main: "Debt & Banking",  sub: "Bank Fees",            section: "expenses" };
   if (/interac.e-transfer.rtn/i.test(sub))                      return { main: "TRANSFER",        sub: "Transfer — Exclude",   section: "transfer" };
 
-  // 4. Free Interac E-Transfer — NR bank fixed-amount rules
   if (/free.interac.e-transfer/i.test(sub)) {
     if (accountId === "nr_scotia_bank") {
       if (abs === 3000) return { main: "Home",   sub: "Rent",                 section: "expenses" };
@@ -103,14 +129,12 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
     return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
   }
 
-  // 5. Insurance Corp of BC — bank only (monthly)
   if ((/insurance.corporation|icbc/i.test(sub) || /^insurance$/i.test(desc)) && !isCCAcct) {
     return abs >= 220
       ? { main: "Transportation", sub: "Tesla ICBC", section: "expenses" }
       : { main: "Transportation", sub: "Van ICBC",   section: "expenses" };
   }
 
-  // 6. Wealthsimple savings — by amount
   if (/wealthsimple/i.test(sub) || /wealthsimple/i.test(desc)) {
     if (abs >= 640 && abs <= 660) return { main: "SR FHSA",       sub: "SR FHSA",       section: "savings" };
     if (abs >= 490 && abs <= 510) return { main: "SR TFSA",       sub: "SR TFSA",       section: "savings" };
@@ -119,30 +143,22 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
     return { main: "SR TFSA", sub: "SR TFSA", section: "savings" };
   }
 
-  // 7. CC payments / bank transfers
   if (/credit.card.*loc.payment|crd\.card.bill|credit.card.pay/i.test(desc)) return { main: "TRANSFER", sub: "CC Payment",         section: "transfer" };
   if (/panorama.place/i.test(desc) || /panorama.place/i.test(sub))           return { main: "TRANSFER", sub: "CC Payment",         section: "transfer" };
   if (/scotiabank.transit/i.test(desc) || /scotiabank.transit/i.test(sub))   return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
   if (/scotiabank.*transit|abm.*interac/i.test(desc))                         return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
   if (/service.charge/i.test(desc))                                           return { main: "Debt & Banking", sub: "Bank Fees",    section: "expenses" };
+  if (/costco/i.test(sub) && !isCCAcct && amount > 0)                        return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
 
-  // 8. Costco on bank credit = exclude
-  if (/costco/i.test(sub) && !isCCAcct && amount > 0) return { main: "TRANSFER", sub: "Transfer — Exclude", section: "transfer" };
-
-  // 9. Merchant keyword rules
   const m = `${desc} ${sub}`;
 
-  // ── Income ──
   if (/canada.child|ccb.federal/i.test(m)) return { main: "Navneet Rathore", sub: "Canada Child Benefit", section: "income" };
-
-  // ── ICBC on CC = annual renewal ──
-  if (/\bicbc\b/i.test(m) && isCCAcct) return { main: "Transportation", sub: "ICBC Annual Renewal", section: "expenses" };
+  if (/\bicbc\b/i.test(m) && isCCAcct)  return { main: "Transportation", sub: "ICBC Annual Renewal", section: "expenses" };
   if (/\bicbc\b/i.test(m) && !isCCAcct)
     return abs >= 220
       ? { main: "Transportation", sub: "Tesla ICBC", section: "expenses" }
       : { main: "Transportation", sub: "Van ICBC",   section: "expenses" };
 
-  // ── Groceries ──
   if (/fruiticana|fruiticna|store.fruiticana/i.test(m)) return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
   if (/no.frills/i.test(m))                   return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
   if (/instacart|ic\*.insta|ic\*.costco/i.test(m)) return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
@@ -160,7 +176,6 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
   if (/day.to.day/i.test(m))                  return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
   if (/costco/i.test(m) && isCCAcct)          return { main: "Food & Dining", sub: "Groceries", section: "expenses" };
 
-  // ── Dining Out ──
   if (/uber.eats|ubereats/i.test(m))          return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
   if (/super.vege.pizza|\bpizza\b/i.test(m))  return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
   if (/udupi.adda/i.test(m))                  return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
@@ -173,12 +188,10 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
   if (/burgrill/i.test(m))                    return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
   if (/shudh.vaishnu/i.test(m))               return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
   if (/purdy.*chocolat/i.test(m))             return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
-  if (/7.eleven|7eleven|seven.eleven/i.test(m)) return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
+  if (/7.eleven|7eleven/i.test(m))            return { main: "Food & Dining", sub: "Dining Out", section: "expenses" };
 
-  // ── Transportation ──
-  // Uber refund (credit on CC) → Rideshare
-  if (/\buber\b/i.test(m) && amount > 0)      return { main: "Transportation", sub: "Rideshare", section: "expenses" };
-  if (/uber.canada\/ubertrip|uber.holdings|uber \*trip|uber.canada\/ubereats/i.test(m)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
+  if (/\buber\b/i.test(m) && amount > 0)      return { main: "Transportation", sub: "Rideshare",       section: "expenses" };
+  if (/uber.canada\/ubertrip|uber.holdings|uber \*trip|ubereats/i.test(m)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
   if (/^uber$/i.test(desc) || /\buber\b/i.test(desc)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
   if (/^lyft$/i.test(desc) || /\blyft\b/i.test(desc)) return { main: "Transportation", sub: "Rideshare", section: "expenses" };
   if (/impark/i.test(m))                      return { main: "Transportation", sub: "Parking",          section: "expenses" };
@@ -186,45 +199,39 @@ function autoCategorize(description, subDescription, amount, accountId, merchant
   if (/costco.gas|gas.stn(?!\w)/i.test(m))    return { main: "Transportation", sub: "Gas",              section: "expenses" };
   if (/tesla/i.test(m) && abs < 50)           return { main: "Transportation", sub: "Tesla App",        section: "expenses" };
 
-  // ── Health ──
-  if (/shoppers.drug|shoppers drug/i.test(m)) return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
-  if (/guildford.drugs/i.test(m))             return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
-  if (/lifelabs/i.test(m))                    return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
-  if (/physiofirst|physiother/i.test(m))      return { main: "Health", sub: "Pharmacy & Medical", section: "expenses" };
-  if (/\bymca\b/i.test(m))                    return { main: "Health", sub: "YMCA",               section: "expenses" };
+  if (/shoppers.drug|shoppers drug/i.test(m)) return { main: "Health", sub: "Pharmacy & Medical",  section: "expenses" };
+  if (/guildford.drugs/i.test(m))             return { main: "Health", sub: "Pharmacy & Medical",  section: "expenses" };
+  if (/lifelabs/i.test(m))                    return { main: "Health", sub: "Pharmacy & Medical",  section: "expenses" };
+  if (/physiofirst|physiother/i.test(m))      return { main: "Health", sub: "Pharmacy & Medical",  section: "expenses" };
+  if (/\bymca\b/i.test(m))                    return { main: "Health", sub: "YMCA",                section: "expenses" };
   if (/fade.factory|hv.fade|barbershop/i.test(m)) return { main: "Health", sub: "Wellness & Beauty", section: "expenses" };
-  if (/sq \*revere|revere.massage/i.test(m))  return { main: "Health", sub: "Wellness & Beauty", section: "expenses" };
+  if (/sq \*revere|revere.massage/i.test(m))  return { main: "Health", sub: "Wellness & Beauty",   section: "expenses" };
 
-  // ── Shopping ──
-  if (/amazon.prime|amznprime/i.test(m))      return { main: "Digital",  sub: "Amazon Prime",          section: "expenses" };
-  if (/\bamazon\b/i.test(m))                  return { main: "Shopping", sub: "Amazon Purchases",       section: "expenses" };
-  if (/dollarama/i.test(m))                   return { main: "Shopping", sub: "Household / Dollarama",  section: "expenses" };
-  if (/elegant.housewares/i.test(m))          return { main: "Shopping", sub: "Household / Dollarama",  section: "expenses" };
-  if (/\bikea\b/i.test(m))                    return { main: "Shopping", sub: "Household / Dollarama",  section: "expenses" };
-  if (/\bwinners\b/i.test(m))                 return { main: "Shopping", sub: "Clothing",               section: "expenses" };
-  if (/\btemu\b/i.test(m))                    return { main: "Shopping", sub: "Clothing",               section: "expenses" };
-  if (/gap.outlet/i.test(m))                  return { main: "Shopping", sub: "Clothing",               section: "expenses" };
-  if (/la.vie.en.rose/i.test(m))              return { main: "Shopping", sub: "Clothing",               section: "expenses" };
-  if (/pastime.sports/i.test(m))              return { main: "Shopping", sub: "Clothing",               section: "expenses" };
-  if (/sport.chek|sportchek/i.test(m))        return { main: "Shopping", sub: "Clothing",               section: "expenses" };
+  if (/amazon.prime|amznprime/i.test(m))      return { main: "Digital",  sub: "Amazon Prime",         section: "expenses" };
+  if (/\bamazon\b/i.test(m))                  return { main: "Shopping", sub: "Amazon Purchases",      section: "expenses" };
+  if (/dollarama/i.test(m))                   return { main: "Shopping", sub: "Household / Dollarama", section: "expenses" };
+  if (/elegant.housewares/i.test(m))          return { main: "Shopping", sub: "Household / Dollarama", section: "expenses" };
+  if (/\bikea\b/i.test(m))                    return { main: "Shopping", sub: "Household / Dollarama", section: "expenses" };
+  if (/\bwinners\b/i.test(m))                 return { main: "Shopping", sub: "Clothing",              section: "expenses" };
+  if (/\btemu\b/i.test(m))                    return { main: "Shopping", sub: "Clothing",              section: "expenses" };
+  if (/gap.outlet/i.test(m))                  return { main: "Shopping", sub: "Clothing",              section: "expenses" };
+  if (/la.vie.en.rose/i.test(m))              return { main: "Shopping", sub: "Clothing",              section: "expenses" };
+  if (/pastime.sports/i.test(m))              return { main: "Shopping", sub: "Clothing",              section: "expenses" };
+  if (/sport.chek|sportchek/i.test(m))        return { main: "Shopping", sub: "Clothing",              section: "expenses" };
 
-  // ── Digital ──
   if (/\bfido\b/i.test(m))                    return { main: "Digital", sub: "Fido Mobile",    section: "expenses" };
-  if (/\btelus\b/i.test(m))                   return { main: "Digital", sub: "Telus Internet",  section: "expenses" };
+  if (/\btelus\b/i.test(m))                   return { main: "Digital", sub: "Telus Internet", section: "expenses" };
   if (/apple.bill|apple\.com|icloud/i.test(m)) return { main: "Digital", sub: "Apple / iCloud", section: "expenses" };
   if (/chatgpt|openai/i.test(m))              return { main: "Digital", sub: "ChatGPT",         section: "expenses" };
   if (/\bnetflix\b/i.test(m))                 return { main: "Digital", sub: "Netflix",         section: "expenses" };
   if (/google.*storage|gmail.*storage/i.test(m)) return { main: "Digital", sub: "Gmail",        section: "expenses" };
 
-  // ── Family ──
   if (/gobind.marg/i.test(m))                 return { main: "Family", sub: "Gurshaan School Fees", section: "expenses" };
   if (/daycare|ecds|child.care/i.test(m))     return { main: "Family", sub: "Gurnadar Daycare",     section: "expenses" };
 
-  // ── Charity ──
   if (/gurdwara/i.test(m))                    return { main: "Charity", sub: "Charity / Donations", section: "expenses" };
   if (/guru.nanak.food.bank/i.test(m))        return { main: "Charity", sub: "Charity / Donations", section: "expenses" };
 
-  // ── Misc ──
   if (/newton.library|\blibrary\b/i.test(m))  return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
   if (/ups.store/i.test(m))                   return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
   if (/bear.creek.train/i.test(m))            return { main: "Custom / Misc", sub: "Miscellaneous", section: "expenses" };
@@ -316,21 +323,15 @@ function parseCSV(text, accountId, merchantMemory = {}) {
   for (let i = 1; i < lines.length; i++) {
     const cells = parseCSVLine(lines[i]);
     if (cells.length < 3) continue;
-
     const rawDate = clean(cells[dateIdx >= 0 ? dateIdx : 0]);
     if (!rawDate || rawDate.toLowerCase().includes("filter")) continue;
-
     const description = clean(cells[descIdx >= 0 ? descIdx : 1]);
     const subDesc     = subDescIdx >= 0 ? clean(cells[subDescIdx]) : "";
     const txType      = typeIdx >= 0 ? clean(cells[typeIdx]).toLowerCase() : "";
-    const rawBalance  = (!ccMode && balIdx >= 0)
-      ? parseFloat(clean(cells[balIdx]).replace(/[,\s]/g, "")) : null;
+    const rawBalance  = (!ccMode && balIdx >= 0) ? parseFloat(clean(cells[balIdx]).replace(/[,\s]/g, "")) : null;
 
     let amount = parseFloat(clean(cells[amtIdx >= 0 ? amtIdx : 2]).replace(/[,\s]/g, "")) || 0;
-    if (ccMode) {
-      amount = Math.abs(amount);
-      if (txType.includes("debit")) amount = -amount;
-    }
+    if (ccMode) { amount = Math.abs(amount); if (txType.includes("debit")) amount = -amount; }
 
     let d = new Date(rawDate + "T00:00:00");
     if (isNaN(d)) {
@@ -350,12 +351,8 @@ function parseCSV(text, accountId, merchantMemory = {}) {
 
     rows.push({
       id:             `tx-${Date.now()}-${i}-${Math.random().toString(36).slice(2,6)}`,
-      date:           dateStr,
-      month:          monthKey,
-      account:        accountId,
-      description,
-      subDescription: subDesc,
-      amount,
+      date:           dateStr, month: monthKey, account: accountId,
+      description, subDescription: subDesc, amount,
       mainCategory:   cat?.main    || "",
       subCategory:    cat?.sub     || "",
       section:        cat?.section || "",
@@ -368,14 +365,12 @@ function parseCSV(text, accountId, merchantMemory = {}) {
 
   let balanceInfo = null;
   if (!ccMode && rows.some(r => r.balance !== null)) {
-    const sorted = [...rows].filter(r => r.balance !== null)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sorted = [...rows].filter(r => r.balance !== null).sort((a,b) => new Date(a.date)-new Date(b.date));
     if (sorted.length > 0) {
-      const first = sorted[0], last = sorted[sorted.length - 1];
+      const first = sorted[0], last = sorted[sorted.length-1];
       balanceInfo = { opening: first.balance - first.amount, closing: last.balance };
     }
   }
-
   return { transactions: rows, balanceInfo };
 }
 
@@ -409,6 +404,7 @@ export default function App() {
 
   const [transactions,    setTransactions]    = useState(() => load("rf_transactions",    []));
   const [categories,      setCategories]      = useState(() => load("rf_categories",      null) || DEFAULT_CATEGORIES);
+  const [monthlyOverrides,setMonthlyOverrides]= useState(() => load("rf_monthly_overrides", {}));
   const [investments,     setInvestments]     = useState(() => load("rf_investments",     []));
   const [accountBalances, setAccountBalances] = useState(() => load("rf_balances",        {}));
   const [merchantMemory,  setMerchantMemory]  = useState(() => load("rf_merchant_memory", {}));
@@ -416,57 +412,71 @@ export default function App() {
   const [dupPrompt,       setDupPrompt]       = useState(null);
   const importRef = useRef();
 
-  useEffect(() => { localStorage.setItem("rf_transactions",    JSON.stringify(transactions));    }, [transactions]);
-  useEffect(() => { localStorage.setItem("rf_categories",      JSON.stringify(categories));      }, [categories]);
-  useEffect(() => { localStorage.setItem("rf_investments",     JSON.stringify(investments));     }, [investments]);
-  useEffect(() => { localStorage.setItem("rf_balances",        JSON.stringify(accountBalances)); }, [accountBalances]);
-  useEffect(() => { localStorage.setItem("rf_merchant_memory", JSON.stringify(merchantMemory));  }, [merchantMemory]);
+  useEffect(() => { localStorage.setItem("rf_transactions",      JSON.stringify(transactions));      }, [transactions]);
+  useEffect(() => { localStorage.setItem("rf_categories",        JSON.stringify(categories));        }, [categories]);
+  useEffect(() => { localStorage.setItem("rf_monthly_overrides", JSON.stringify(monthlyOverrides));  }, [monthlyOverrides]);
+  useEffect(() => { localStorage.setItem("rf_investments",       JSON.stringify(investments));       }, [investments]);
+  useEffect(() => { localStorage.setItem("rf_balances",          JSON.stringify(accountBalances));   }, [accountBalances]);
+  useEffect(() => { localStorage.setItem("rf_merchant_memory",   JSON.stringify(merchantMemory));    }, [merchantMemory]);
 
   function showToast(msg, type = "info") { setToast({ msg, type }); setTimeout(() => setToast(null), 4000); }
   function prevMonth() { const [y,m]=selectedMonth.split("-").map(Number); setSelectedMonth(m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,"0")}`); }
   function nextMonth() { const [y,m]=selectedMonth.split("-").map(Number); setSelectedMonth(m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,"0")}`); }
 
-  // ── Export JSON ──
+  // Monthly override helpers
+  function setMonthlyOverride(monthKey, subKey, value) {
+    setMonthlyOverrides(prev => ({
+      ...prev,
+      [monthKey]: { ...(prev[monthKey] || {}), [subKey]: value },
+    }));
+  }
+  function resetMonthlyOverride(monthKey, subKey) {
+    setMonthlyOverrides(prev => {
+      const mo = { ...(prev[monthKey] || {}) };
+      delete mo[subKey];
+      return { ...prev, [monthKey]: mo };
+    });
+  }
+  function hasOverride(monthKey, subKey) {
+    return monthlyOverrides?.[monthKey]?.[subKey] !== undefined;
+  }
+
+  // Export JSON
   function handleExport() {
     const data = {
-      transactions, categories, balances: accountBalances,
-      merchantMemory, investments,
-      exportDate: new Date().toISOString(),
-      version: "v6",
+      transactions, categories, monthlyOverrides,
+      balances: accountBalances, merchantMemory, investments,
+      exportDate: new Date().toISOString(), version: "v7",
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
-    a.href     = url;
-    a.download = `rathore-finance-${new Date().toISOString().split("T")[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = `rathore-finance-${new Date().toISOString().split("T")[0]}.json`;
+    a.click(); URL.revokeObjectURL(url);
     showToast("Data exported successfully");
   }
 
-  // ── Import JSON ──
+  // Import JSON
   function handleImportFile(e) {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
       try {
         const data = JSON.parse(ev.target.result);
-        if (!window.confirm("This will replace ALL existing data. This cannot be undone. Continue?")) return;
-        if (data.transactions)    setTransactions(data.transactions);
-        if (data.categories)      setCategories(data.categories);
-        if (data.balances)        setAccountBalances(data.balances);
-        if (data.merchantMemory)  setMerchantMemory(data.merchantMemory);
-        if (data.investments)     setInvestments(data.investments);
+        if (!window.confirm("This will replace ALL existing data. Continue?")) return;
+        if (data.transactions)     setTransactions(data.transactions);
+        if (data.categories)       setCategories(data.categories);
+        if (data.monthlyOverrides) setMonthlyOverrides(data.monthlyOverrides);
+        if (data.balances)         setAccountBalances(data.balances);
+        if (data.merchantMemory)   setMerchantMemory(data.merchantMemory);
+        if (data.investments)      setInvestments(data.investments);
         showToast("Data imported successfully", "success");
-      } catch {
-        showToast("Invalid file — could not import", "error");
-      }
+      } catch { showToast("Invalid file — could not import", "error"); }
     };
-    reader.readAsText(file);
-    e.target.value = "";
+    reader.readAsText(file); e.target.value = "";
   }
 
-  // ── PDF Export ──
+  // PDF Export
   function handlePDF() {
     const tabName = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
     const period  = activeTab === "annual" ? selectedYear : monthLabel(selectedMonth);
@@ -579,19 +589,19 @@ export default function App() {
             {tab.id==="transactions" && uncatCount>0 && <span className="tab-badge">{uncatCount}</span>}
           </button>
         ))}
-        <div className="nav-actions no-print">
-          <button className="btn-ghost btn-sm" onClick={handleExport} title="Export all data as JSON">⬆ Export</button>
-          <button className="btn-ghost btn-sm" onClick={() => importRef.current.click()} title="Import data from JSON">⬇ Import</button>
+        <div className="nav-actions">
+          <button className="btn-ghost btn-sm" onClick={handleExport}>⬆ Export</button>
+          <button className="btn-ghost btn-sm" onClick={() => importRef.current.click()}>⬇ Import</button>
           <input ref={importRef} type="file" accept=".json" style={{display:"none"}} onChange={handleImportFile} />
-          <button className="btn-ghost btn-sm" onClick={handlePDF} title="Download PDF of current tab">⎙ PDF</button>
+          <button className="btn-ghost btn-sm" onClick={handlePDF}>⎙ PDF</button>
         </div>
       </nav>
 
       <div className="tab-content">
-        {activeTab==="overview"     && <OverviewTab transactions={transactions} categories={categories} selectedMonth={selectedMonth} accountBalances={accountBalances} onPrevMonth={prevMonth} onNextMonth={nextMonth} onGoToTransactions={() => setActiveTab("transactions")} />}
+        {activeTab==="overview"     && <OverviewTab transactions={transactions} categories={categories} monthlyOverrides={monthlyOverrides} selectedMonth={selectedMonth} accountBalances={accountBalances} onPrevMonth={prevMonth} onNextMonth={nextMonth} onGoToTransactions={() => setActiveTab("transactions")} onSetOverride={setMonthlyOverride} onResetOverride={resetMonthlyOverride} hasOverride={hasOverride} />}
         {activeTab==="transactions" && <TransactionsTab transactions={transactions} categories={categories} merchantMemory={merchantMemory} selectedMonth={selectedMonth} onPrevMonth={prevMonth} onNextMonth={nextMonth} onImport={handleImport} onUpdateTransaction={updateTransaction} onDeleteTransaction={deleteTransaction} onClearMonth={clearMonth} onBulkReCategorize={bulkReCategorize} onCategoriesChange={setCategories} onUpdateMerchantMemory={updateMerchantMemory} showToast={showToast} />}
         {activeTab==="investments"  && <InvestmentsTab investments={investments} onInvestmentsChange={setInvestments} showToast={showToast} />}
-        {activeTab==="annual"       && <AnnualTab transactions={transactions} categories={categories} accountBalances={accountBalances} selectedYear={selectedYear} onPrevYear={() => setSelectedYear(y=>y-1)} onNextYear={() => setSelectedYear(y=>y+1)} />}
+        {activeTab==="annual"       && <AnnualTab transactions={transactions} categories={categories} monthlyOverrides={monthlyOverrides} accountBalances={accountBalances} selectedYear={selectedYear} onPrevYear={() => setSelectedYear(y=>y-1)} onNextYear={() => setSelectedYear(y=>y+1)} />}
       </div>
     </div>
   );
@@ -599,10 +609,11 @@ export default function App() {
 
 // ─── OVERVIEW TAB ─────────────────────────────────────────────────────────────
 
-function OverviewTab({ transactions, categories, selectedMonth, accountBalances, onPrevMonth, onNextMonth, onGoToTransactions }) {
-  const [headExp, setHeadExp] = useState({});
-  const [savExp,  setSavExp]  = useState(false);
-  const [tfExp,   setTfExp]   = useState(false);
+function OverviewTab({ transactions, categories, monthlyOverrides, selectedMonth, accountBalances, onPrevMonth, onNextMonth, onGoToTransactions, onSetOverride, onResetOverride, hasOverride }) {
+  const [headExp,     setHeadExp]     = useState({});
+  const [savExp,      setSavExp]      = useState(false);
+  const [tfExp,       setTfExp]       = useState(false);
+  const [editBudget,  setEditBudget]  = useState(null); // { subKey, value }
 
   const monthTxs = transactions.filter(t => t.month===selectedMonth);
   const counted  = monthTxs.filter(t => !t.isTransfer && t.mainCategory && t.section);
@@ -612,28 +623,51 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
     return counted.filter(t => t.section===section && (!mainCat||t.mainCategory===mainCat) && (!subCat||t.subCategory===subCat)).reduce((s,t)=>s+Math.abs(t.amount),0);
   }
 
-  const bIncome = categories.income.reduce((s,h)=>s+Object.values(h.budget).reduce((a,b)=>a+b,0),0);
-  const bExp    = categories.expenses.reduce((s,h)=>s+Object.values(h.budget).reduce((a,b)=>a+b,0),0);
-  const bSav    = categories.savings.reduce((s,h)=>s+h.budget,0);
+  function getBudget(subKey) { return getEffectiveBudget(subKey, selectedMonth, categories, monthlyOverrides); }
+
+  const bIncome = categories.income.reduce((s,h)=>s+h.subs.reduce((a,sub)=>a+getBudget(sub),0),0);
+  const bExp    = categories.expenses.reduce((s,h)=>s+h.subs.reduce((a,sub)=>a+getBudget(sub),0),0);
+  const bSav    = categories.savings.reduce((s,h)=>s+getBudget(h.head),0);
   const aIncome = sumActual("income");
   const aExp    = sumActual("expenses");
   const aSav    = sumActual("savings");
   const netBal  = aIncome - aExp - aSav;
 
-  const srTxs = monthTxs.filter(t => t.account==="sr_scotia_bank");
-  const nrTxs = monthTxs.filter(t => t.account==="nr_scotia_bank");
-
-  // Opening = previous month's closing for continuity
   function getDisplayBalInfo(accountId) {
     const stored = accountBalances[`${accountId}-${selectedMonth}`];
     if (!stored) return null;
-    const [y, m] = selectedMonth.split("-").map(Number);
-    const prevKey   = m === 1 ? `${y-1}-12` : `${y}-${String(m-1).padStart(2,"0")}`;
+    const [y,m] = selectedMonth.split("-").map(Number);
+    const prevKey   = m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,"0")}`;
     const prevClose = accountBalances[`${accountId}-${prevKey}`]?.closing;
-    return {
-      opening: prevClose !== undefined ? prevClose : stored.opening,
-      closing: stored.closing,
-    };
+    return { opening: prevClose !== undefined ? prevClose : stored.opening, closing: stored.closing };
+  }
+
+  function BudgetCell({ subKey }) {
+    const val = getBudget(subKey);
+    const isOv = hasOverride(selectedMonth, subKey);
+    const [editing, setEditing] = useState(false);
+    const [local,   setLocal]   = useState(String(val));
+
+    if (editing) return (
+      <span className="budget-edit-wrap">
+        <input className="budget-edit-inp" type="number" value={local} autoFocus
+          onChange={e=>setLocal(e.target.value)}
+          onBlur={() => {
+            const n = parseFloat(local);
+            if (!isNaN(n)) onSetOverride(selectedMonth, subKey, n);
+            setEditing(false);
+          }}
+          onKeyDown={e => { if (e.key==="Enter") e.target.blur(); if (e.key==="Escape") setEditing(false); }}
+        />
+      </span>
+    );
+
+    return (
+      <span className="budget-cell-wrap" onClick={() => { setLocal(String(val)); setEditing(true); }}>
+        <span className={`budget-cell-val${isOv?" budget-override":""}`}>{val>0?fmt(val):"—"}</span>
+        {isOv && <span className="override-dot" title="Monthly override — click to edit" onClick={e=>{e.stopPropagation();onResetOverride(selectedMonth,subKey);}}>●</span>}
+      </span>
+    );
   }
 
   return (
@@ -644,7 +678,10 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           <span className="month-label">{monthLabel(selectedMonth)}</span>
           <button className="btn-ghost" onClick={onNextMonth}>▶</button>
         </div>
-        <button className="btn-ghost btn-sm" onClick={onGoToTransactions}>⬆ Upload CSV</button>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span className="override-legend">💡 Click any budget value to override for this month only · ● = override active (click to reset)</span>
+          <button className="btn-ghost btn-sm" onClick={onGoToTransactions}>⬆ Upload CSV</button>
+        </div>
       </div>
       <div className="print-header">{monthLabel(selectedMonth)} — Overview</div>
 
@@ -656,8 +693,8 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           <span className="col-hdr">Debits</span>
           <span className="col-hdr">Closing</span>
         </div>
-        <BankRow label="SR Scotia Bank" txs={srTxs} balInfo={getDisplayBalInfo("sr_scotia_bank")} />
-        <BankRow label="NR Scotia Bank" txs={nrTxs} balInfo={getDisplayBalInfo("nr_scotia_bank")} isLast />
+        <BankRow label="SR Scotia Bank" txs={monthTxs.filter(t=>t.account==="sr_scotia_bank")} balInfo={getDisplayBalInfo("sr_scotia_bank")} />
+        <BankRow label="NR Scotia Bank" txs={monthTxs.filter(t=>t.account==="nr_scotia_bank")} balInfo={getDisplayBalInfo("nr_scotia_bank")} isLast />
       </div>
 
       <div className="tiles-row">
@@ -678,9 +715,10 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
           <span className="acc-num-col hdr">Actual</span>
         </div>
 
+        {/* INCOME */}
         <div className="acc-section-row"><span className="acc-section-icon">↑</span><span className="acc-label-col acc-section-name">Income</span><span className="acc-num-col c-muted">{fmt(bIncome)}</span><span className={`acc-num-col ${colorCls(getActualColor(aIncome,bIncome,"income"))}`}>{aIncome>0?fmt(aIncome):"—"}</span></div>
         {categories.income.map(h => {
-          const hB=Object.values(h.budget).reduce((a,b)=>a+b,0), hA=sumActual("income",h.head), k=`inc-${h.head}`;
+          const hB=h.subs.reduce((a,s)=>a+getBudget(s),0), hA=sumActual("income",h.head), k=`inc-${h.head}`;
           return (
             <div key={h.head}>
               <div className="acc-head-row" onClick={()=>setHeadExp(p=>({...p,[k]:!p[k]}))}>
@@ -690,16 +728,23 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
                 <span className={`acc-num-col ${colorCls(getActualColor(hA,hB,"income"))}`}>{hA>0?fmt(hA):"—"}</span>
               </div>
               {headExp[k] && h.subs.map(sub => {
-                const sB=h.budget[sub]||0, sA=sumActual("income",h.head,sub);
-                return (<div key={sub} className="acc-item-row"><span className="acc-label-col acc-item-name">{sub}</span><span className="acc-num-col c-muted">{sB>0?fmt(sB):"—"}</span><span className={`acc-num-col ${colorCls(getActualColor(sA,sB,"income"))}`}>{sA>0?fmt(sA):"—"}</span></div>);
+                const sA=sumActual("income",h.head,sub);
+                return (
+                  <div key={sub} className="acc-item-row">
+                    <span className="acc-label-col acc-item-name">{sub}</span>
+                    <span className="acc-num-col"><BudgetCell subKey={sub} /></span>
+                    <span className={`acc-num-col ${colorCls(getActualColor(sA,getBudget(sub),"income"))}`}>{sA>0?fmt(sA):"—"}</span>
+                  </div>
+                );
               })}
             </div>
           );
         })}
 
+        {/* EXPENSES */}
         <div className="acc-section-row"><span className="acc-section-icon">↓</span><span className="acc-label-col acc-section-name">Expenses</span><span className="acc-num-col c-muted">{fmt(bExp)}</span><span className={`acc-num-col ${colorCls(getActualColor(aExp,bExp,"expense"))}`}>{aExp>0?fmt(aExp):"—"}</span></div>
         {categories.expenses.map(h => {
-          const hB=Object.values(h.budget).reduce((a,b)=>a+b,0), hA=counted.filter(t=>t.section==="expenses"&&t.mainCategory===h.head).reduce((s,t)=>s+Math.abs(t.amount),0), k=`exp-${h.head}`;
+          const hB=h.subs.reduce((a,s)=>a+getBudget(s),0), hA=counted.filter(t=>t.section==="expenses"&&t.mainCategory===h.head).reduce((s,t)=>s+Math.abs(t.amount),0), k=`exp-${h.head}`;
           return (
             <div key={h.head}>
               <div className="acc-head-row" onClick={()=>setHeadExp(p=>({...p,[k]:!p[k]}))}>
@@ -709,13 +754,20 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
                 <span className={`acc-num-col ${colorCls(getActualColor(hA,hB,"expense"))}`}>{hA>0?fmt(hA):"—"}</span>
               </div>
               {headExp[k] && h.subs.map(sub => {
-                const sB=h.budget[sub]||0, sA=counted.filter(t=>t.section==="expenses"&&t.mainCategory===h.head&&t.subCategory===sub).reduce((s,t)=>s+Math.abs(t.amount),0);
-                return (<div key={sub} className="acc-item-row"><span className="acc-label-col acc-item-name">{sub}</span><span className="acc-num-col c-muted">{sB>0?fmt(sB):"—"}</span><span className={`acc-num-col ${colorCls(getActualColor(sA,sB,"expense"))}`}>{sA>0?fmt(sA):"—"}</span></div>);
+                const sA=counted.filter(t=>t.section==="expenses"&&t.mainCategory===h.head&&t.subCategory===sub).reduce((s,t)=>s+Math.abs(t.amount),0);
+                return (
+                  <div key={sub} className="acc-item-row">
+                    <span className="acc-label-col acc-item-name">{sub}</span>
+                    <span className="acc-num-col"><BudgetCell subKey={sub} /></span>
+                    <span className={`acc-num-col ${colorCls(getActualColor(sA,getBudget(sub),"expense"))}`}>{sA>0?fmt(sA):"—"}</span>
+                  </div>
+                );
               })}
             </div>
           );
         })}
 
+        {/* SAVINGS */}
         <div className="acc-section-row clickable" onClick={()=>setSavExp(s=>!s)}>
           <span className="acc-chev">{savExp?"▾":"▸"}</span><span className="acc-label-col acc-section-name">Savings</span>
           <span className="acc-num-col c-muted">{fmt(bSav)}</span>
@@ -723,16 +775,23 @@ function OverviewTab({ transactions, categories, selectedMonth, accountBalances,
         </div>
         {savExp && categories.savings.map(s => {
           const sA=sumActual("savings",s.head);
-          return (<div key={s.head} className="acc-item-row"><span className="acc-label-col acc-item-name">{s.head}</span><span className="acc-num-col c-muted">{s.budget>0?fmt(s.budget):"—"}</span><span className={`acc-num-col ${colorCls(getActualColor(sA,s.budget,"savings"))}`}>{sA>0?fmt(sA):"—"}</span></div>);
+          return (
+            <div key={s.head} className="acc-item-row">
+              <span className="acc-label-col acc-item-name">{s.head}</span>
+              <span className="acc-num-col"><BudgetCell subKey={s.head} /></span>
+              <span className={`acc-num-col ${colorCls(getActualColor(sA,getBudget(s.head),"savings"))}`}>{sA>0?fmt(sA):"—"}</span>
+            </div>
+          );
         })}
 
+        {/* TRANSFERS */}
         <div className="acc-section-row clickable dimmed" onClick={()=>setTfExp(s=>!s)}>
           <span className="acc-chev">{tfExp?"▾":"▸"}</span><span className="acc-label-col acc-section-name">Transfers — excluded from all calculations</span>
           <span className="acc-num-col">—</span><span className="acc-num-col">—</span>
         </div>
         {tfExp && (tfTxs.length===0
           ? <div className="acc-item-row"><span className="acc-label-col acc-item-name c-muted">No transfers this month</span><span className="acc-num-col">—</span><span className="acc-num-col">—</span></div>
-          : tfTxs.map(t => (<div key={t.id} className="acc-item-row"><span className="acc-label-col acc-item-name">{t.description}</span><span className="acc-num-col c-muted">—</span><span className="acc-num-col c-muted">{fmt(Math.abs(t.amount))}</span></div>))
+          : tfTxs.map(t=><div key={t.id} className="acc-item-row"><span className="acc-label-col acc-item-name">{t.description}</span><span className="acc-num-col c-muted">—</span><span className="acc-num-col c-muted">{fmt(Math.abs(t.amount))}</span></div>)
         )}
       </div>
     </div>
@@ -748,7 +807,7 @@ function BankRow({ label, txs, balInfo, isLast }) {
       <span className="bank-col c-muted">{balInfo?fmt(balInfo.opening):"—"}</span>
       <span className="bank-col c-green">{credits>0?`+${fmt(credits)}`:"—"}</span>
       <span className="bank-col c-red">{debits>0?`−${fmt(debits)}`:"—"}</span>
-      <span className="bank-col" style={{fontWeight:500}}>{balInfo?fmt(balInfo.closing):(credits>0||debits>0?fmt(credits-debits):"—")}</span>
+      <span className="bank-col" style={{fontWeight:600}}>{balInfo?fmt(balInfo.closing):(credits>0||debits>0?fmt(credits-debits):"—")}</span>
     </div>
   );
 }
@@ -788,22 +847,18 @@ function TransactionsTab({ transactions, categories, merchantMemory, selectedMon
     .filter(t => !search || t.description.toLowerCase().includes(search.toLowerCase()) || (t.mainCategory||"").toLowerCase().includes(search.toLowerCase()) || (t.subCategory||"").toLowerCase().includes(search.toLowerCase()) || (t.remarks||"").toLowerCase().includes(search.toLowerCase()))
     .sort((a,b) => new Date(b.date)-new Date(a.date));
 
-  // Determine account type for totals bar
-  const filteredAcct    = ACCOUNTS.find(a => a.id===filterAccount);
-  const isFilteredByCC  = filteredAcct?.type === "cc";
-  const isFilteredByBank= filteredAcct?.type === "bank";
+  const filteredAcct     = ACCOUNTS.find(a => a.id===filterAccount);
+  const isFilteredByCC   = filteredAcct?.type === "cc";
+  const isFilteredByBank = filteredAcct?.type === "bank";
 
-  // CC totals
   const ccNonTransfer = isFilteredByCC ? filtered.filter(t => !t.isTransfer) : [];
   const ccTotalSpent  = ccNonTransfer.filter(t=>t.amount<0).reduce((s,t)=>s+Math.abs(t.amount),0);
   const ccRefunds     = ccNonTransfer.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
   const ccNet         = ccTotalSpent - ccRefunds;
 
-  // Bank totals
-  const bankTxs      = isFilteredByBank ? filtered : [];
-  const bankIncome   = bankTxs.filter(t => t.section==="income").reduce((s,t)=>s+Math.abs(t.amount),0);
-  const bankExpenses = bankTxs.filter(t => t.section==="expenses").reduce((s,t)=>s+Math.abs(t.amount),0);
-  const bankSavings  = bankTxs.filter(t => t.section==="savings").reduce((s,t)=>s+Math.abs(t.amount),0);
+  const bankIncome   = isFilteredByBank ? filtered.filter(t=>t.section==="income").reduce((s,t)=>s+Math.abs(t.amount),0) : 0;
+  const bankExpenses = isFilteredByBank ? filtered.filter(t=>t.section==="expenses").reduce((s,t)=>s+Math.abs(t.amount),0) : 0;
+  const bankSavings  = isFilteredByBank ? filtered.filter(t=>t.section==="savings").reduce((s,t)=>s+Math.abs(t.amount),0) : 0;
 
   const allMainCats = [
     ...categories.income.map(h   => ({ main:h.head, section:"income"   })),
@@ -856,7 +911,6 @@ function TransactionsTab({ transactions, categories, merchantMemory, selectedMon
           <button className="btn-ghost btn-sm" onClick={()=>setBulkPrompt(null)}>Dismiss</button>
         </div>
       )}
-
       <div className="month-bar no-print">
         <div className="month-nav">
           <button className="btn-ghost" onClick={onPrevMonth}>◀</button>
@@ -872,8 +926,7 @@ function TransactionsTab({ transactions, categories, merchantMemory, selectedMon
           <button className={`btn-ghost btn-sm${showCatMgr?" active":""}`} onClick={()=>setShowCatMgr(s=>!s)}>⚙ Categories</button>
         </div>
       </div>
-
-      <div className="print-header">{monthLabel(selectedMonth)} — Transactions{filteredAcct ? ` — ${filteredAcct.label}` : ""}</div>
+      <div className="print-header">{monthLabel(selectedMonth)} — Transactions{filteredAcct?` — ${filteredAcct.label}`:""}</div>
 
       {showCatMgr && <CategoryManager categories={categories} onChange={onCategoriesChange} onClose={()=>setShowCatMgr(false)} />}
 
@@ -909,58 +962,31 @@ function TransactionsTab({ transactions, categories, merchantMemory, selectedMon
             <th style={{width:30}} className="no-print"></th>
           </tr></thead>
           <tbody>
-            {filtered.length===0 && (
-              <tr><td colSpan={8} className="empty-cell">{monthTxs.length===0?"No transactions for this month. Select an account and upload a CSV.":"No transactions match the current filters."}</td></tr>
-            )}
-            {filtered.map(tx => (
-              <TransactionRow key={tx.id} tx={tx} allMainCats={allMainCats} getSubsFor={getSubsFor} editingCell={editingCell} setEditingCell={setEditingCell} onCellEdit={handleCellEdit} onDelete={onDeleteTransaction} />
-            ))}
+            {filtered.length===0 && <tr><td colSpan={8} className="empty-cell">{monthTxs.length===0?"No transactions for this month. Select an account and upload a CSV.":"No transactions match the current filters."}</td></tr>}
+            {filtered.map(tx => <TransactionRow key={tx.id} tx={tx} allMainCats={allMainCats} getSubsFor={getSubsFor} editingCell={editingCell} setEditingCell={setEditingCell} onCellEdit={handleCellEdit} onDelete={onDeleteTransaction} />)}
           </tbody>
         </table>
       </div>
 
-      {/* Bank Account Totals Bar */}
       {isFilteredByBank && (
         <div className="acct-totals-bar">
-          <div className="acct-totals-item">
-            <span className="acct-totals-label">Net Income</span>
-            <span className="acct-totals-value c-green">{bankIncome>0?fmt(bankIncome):"—"}</span>
-          </div>
+          <div className="acct-totals-item"><span className="acct-totals-label">Net Income</span><span className="acct-totals-value c-green">{bankIncome>0?fmt(bankIncome):"—"}</span></div>
           <div className="acct-totals-sep" />
-          <div className="acct-totals-item">
-            <span className="acct-totals-label">Net Expenses</span>
-            <span className="acct-totals-value c-red">{bankExpenses>0?fmt(bankExpenses):"—"}</span>
-          </div>
+          <div className="acct-totals-item"><span className="acct-totals-label">Net Expenses</span><span className="acct-totals-value c-red">{bankExpenses>0?fmt(bankExpenses):"—"}</span></div>
           <div className="acct-totals-sep" />
-          <div className="acct-totals-item">
-            <span className="acct-totals-label">Net Savings</span>
-            <span className="acct-totals-value c-green">{bankSavings>0?fmt(bankSavings):"—"}</span>
-          </div>
+          <div className="acct-totals-item"><span className="acct-totals-label">Net Savings</span><span className="acct-totals-value c-green">{bankSavings>0?fmt(bankSavings):"—"}</span></div>
         </div>
       )}
 
-      {/* CC Totals Bar */}
       {isFilteredByCC && (
         <div className="acct-totals-bar">
-          <div className="acct-totals-item">
-            <span className="acct-totals-label">Total Spent</span>
-            <span className="acct-totals-value c-red">{ccTotalSpent>0?fmt(ccTotalSpent):"—"}</span>
-          </div>
+          <div className="acct-totals-item"><span className="acct-totals-label">Total Spent</span><span className="acct-totals-value c-red">{ccTotalSpent>0?fmt(ccTotalSpent):"—"}</span></div>
           <div className="acct-totals-sep" />
-          <div className="acct-totals-item">
-            <span className="acct-totals-label">Refunds</span>
-            <span className="acct-totals-value c-green">{ccRefunds>0?`+${fmt(ccRefunds)}`:"—"}</span>
-          </div>
+          <div className="acct-totals-item"><span className="acct-totals-label">Refunds</span><span className="acct-totals-value c-green">{ccRefunds>0?`+${fmt(ccRefunds)}`:"—"}</span></div>
           <div className="acct-totals-sep" />
-          <div className="acct-totals-item">
-            <span className="acct-totals-label">Net Spend</span>
-            <span className="acct-totals-value" style={{fontWeight:600}}>{fmt(ccNet)}</span>
-          </div>
+          <div className="acct-totals-item"><span className="acct-totals-label">Net Spend</span><span className="acct-totals-value" style={{fontWeight:600}}>{fmt(ccNet)}</span></div>
           <div className="acct-totals-sep" />
-          <div className="acct-totals-item">
-            <span className="acct-totals-label">Transactions</span>
-            <span className="acct-totals-value c-muted">{ccNonTransfer.length}</span>
-          </div>
+          <div className="acct-totals-item"><span className="acct-totals-label">Transactions</span><span className="acct-totals-value c-muted">{ccNonTransfer.length}</span></div>
         </div>
       )}
 
@@ -1038,7 +1064,13 @@ function CategoryManager({ categories, onChange, onClose }) {
 
   return (
     <div className="cat-mgr card no-print">
-      <div className="cat-mgr-hdr"><span className="cat-mgr-title">⚙ Manage Categories</span><button className="btn-ghost btn-sm" onClick={onClose}>✕ Close</button></div>
+      <div className="cat-mgr-hdr">
+        <div>
+          <span className="cat-mgr-title">⚙ Standard Budget Template</span>
+          <div className="cat-mgr-subtitle">Changes here apply to all months. Use Overview tab to override a specific month.</div>
+        </div>
+        <button className="btn-ghost btn-sm" onClick={onClose}>✕ Close</button>
+      </div>
       {["income","expenses","savings"].map(section=>(
         <div key={section} className="cat-section">
           <div className="cat-section-lbl">{section.charAt(0).toUpperCase()+section.slice(1)}</div>
@@ -1051,7 +1083,7 @@ function CategoryManager({ categories, onChange, onClose }) {
           <div className="cat-add-row" style={{marginTop:8}}><input className="inp" placeholder={`New ${section} head...`} value={newHead[section]} onChange={e=>setNewHead(n=>({...n,[section]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addHead(section)}/><button className="btn-ghost btn-sm" onClick={()=>addHead(section)}>+ Add Head</button></div>
         </div>
       ))}
-      <div className="cat-mgr-footer"><button className="btn-primary" onClick={()=>{onChange(local);onClose();}}>Save Changes</button><button className="btn-ghost btn-sm" onClick={onClose}>Cancel</button></div>
+      <div className="cat-mgr-footer"><button className="btn-primary" onClick={()=>{onChange(local);onClose();}}>Save Standard Template</button><button className="btn-ghost btn-sm" onClick={onClose}>Cancel</button></div>
     </div>
   );
 }
@@ -1117,96 +1149,93 @@ function InvestmentsTab({ investments, onInvestmentsChange, showToast }) {
 
 const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-function AnnualTab({ transactions, categories, accountBalances, selectedYear, onPrevYear, onNextYear }) {
+function AnnualTab({ transactions, categories, monthlyOverrides, accountBalances, selectedYear, onPrevYear, onNextYear }) {
   const now   = new Date();
   const curMK = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-
   const monthKeys = Array.from({length:12},(_,i)=>`${selectedYear}-${String(i+1).padStart(2,"0")}`);
 
-  // Opening = previous month's closing (ensures continuity across months)
   function getBalInfo(accountId, key) {
     const stored = accountBalances[`${accountId}-${key}`];
     if (!stored) return null;
-    const [y, m] = key.split("-").map(Number);
-    const prevKey  = m === 1 ? `${y-1}-12` : `${y}-${String(m-1).padStart(2,"0")}`;
+    const [y,m] = key.split("-").map(Number);
+    const prevKey   = m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,"0")}`;
     const prevClose = accountBalances[`${accountId}-${prevKey}`]?.closing;
-    return {
-      opening: prevClose !== undefined ? prevClose : stored.opening,
-      closing: stored.closing,
-    };
+    return { opening: prevClose !== undefined ? prevClose : stored.opening, closing: stored.closing };
   }
 
   function monthData(key) {
-    const txs       = transactions.filter(t => t.month===key && !t.isTransfer && t.mainCategory && t.section);
-    const srIncome  = txs.filter(t=>t.section==="income"&&t.mainCategory==="Simranvir Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
-    const nrIncome  = txs.filter(t=>t.section==="income"&&t.mainCategory==="Navneet Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
-    const totIncome = srIncome+nrIncome;
-    const totExp    = txs.filter(t=>t.section==="expenses").reduce((s,t)=>s+Math.abs(t.amount),0);
-    const srSav     = txs.filter(t=>t.section==="savings"&&SR_SAVINGS_HEADS.includes(t.mainCategory)).reduce((s,t)=>s+Math.abs(t.amount),0);
-    const nrSav     = txs.filter(t=>t.section==="savings"&&NR_SAVINGS_HEADS.includes(t.mainCategory)).reduce((s,t)=>s+Math.abs(t.amount),0);
-    const totSav    = srSav+nrSav;
-    const srBal     = getBalInfo("sr_scotia_bank", key);
-    const nrBal     = getBalInfo("nr_scotia_bank", key);
-    const hasTx     = transactions.some(t=>t.month===key);
-    return { srIncome, nrIncome, totIncome, totExp, srSav, nrSav, totSav, srBal, nrBal, hasTx };
+    const txs     = transactions.filter(t => t.month===key && !t.isTransfer && t.mainCategory && t.section);
+    const srIncome = txs.filter(t=>t.section==="income"&&t.mainCategory==="Simranvir Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
+    const nrIncome = txs.filter(t=>t.section==="income"&&t.mainCategory==="Navneet Rathore").reduce((s,t)=>s+Math.abs(t.amount),0);
+    const totIncome= srIncome+nrIncome;
+
+    // Expenses breakdown by source
+    const allTxs   = transactions.filter(t => t.month===key && !t.isTransfer && t.mainCategory && t.section==="expenses");
+    const srBankExp= allTxs.filter(t=>t.account==="sr_scotia_bank").reduce((s,t)=>s+Math.abs(t.amount),0);
+    const nrBankExp= allTxs.filter(t=>t.account==="nr_scotia_bank").reduce((s,t)=>s+Math.abs(t.amount),0);
+    const ccExp    = allTxs.filter(t=>CC_ACCOUNT_IDS.includes(t.account)).reduce((s,t)=>s+Math.abs(t.amount),0);
+    const totExp   = srBankExp+nrBankExp+ccExp;
+
+    const srSav    = txs.filter(t=>t.section==="savings"&&SR_SAVINGS_HEADS.includes(t.mainCategory)).reduce((s,t)=>s+Math.abs(t.amount),0);
+    const nrSav    = txs.filter(t=>t.section==="savings"&&NR_SAVINGS_HEADS.includes(t.mainCategory)).reduce((s,t)=>s+Math.abs(t.amount),0);
+    const totSav   = srSav+nrSav;
+
+    const srBal    = getBalInfo("sr_scotia_bank", key);
+    const nrBal    = getBalInfo("nr_scotia_bank", key);
+    const hasTx    = transactions.some(t=>t.month===key);
+    return { srIncome, nrIncome, totIncome, srBankExp, nrBankExp, ccExp, totExp, srSav, nrSav, totSav, srBal, nrBal, hasTx };
   }
 
   const data = monthKeys.map(k => ({ key:k, ...monthData(k) }));
 
-  // Row definitions — showTotal/showAvg control whether those columns are filled
+  // Row definitions
   const rows = [
-    { label:"SR Income",           section:"income",   getValue:m=>m.srIncome,        bold:false, showTotal:true,  showAvg:true  },
-    { label:"NR Income",           section:"income",   getValue:m=>m.nrIncome,        bold:false, showTotal:true,  showAvg:true  },
-    { label:"Total Income",        section:"income",   getValue:m=>m.totIncome,       bold:true,  showTotal:true,  showAvg:true  },
-    { label:"Total Expenses",      section:"expenses", getValue:m=>m.totExp,          bold:true,  showTotal:true,  showAvg:true  },
-    { label:"SR Savings",          section:"savings",  getValue:m=>m.srSav,           bold:false, showTotal:true,  showAvg:true  },
-    { label:"NR Savings",          section:"savings",  getValue:m=>m.nrSav,           bold:false, showTotal:true,  showAvg:true  },
-    { label:"Total Savings",       section:"savings",  getValue:m=>m.totSav,          bold:true,  showTotal:true,  showAvg:true  },
-    { label:"SR Opening Balance",  section:"balance",  getValue:m=>m.srBal?.opening,  bold:false, showTotal:false, showAvg:false },
-    { label:"SR Closing Balance",  section:"balance",  getValue:m=>m.srBal?.closing,  bold:false, showTotal:false, showAvg:false },
-    { label:"NR Opening Balance",  section:"balance",  getValue:m=>m.nrBal?.opening,  bold:false, showTotal:false, showAvg:false },
-    { label:"NR Closing Balance",  section:"balance",  getValue:m=>m.nrBal?.closing,  bold:false, showTotal:false, showAvg:false },
+    { label:"SR Income",           section:"income",   getValue:m=>m.srIncome,   bold:false, showTotal:true,  showAvg:true  },
+    { label:"NR Income",           section:"income",   getValue:m=>m.nrIncome,   bold:false, showTotal:true,  showAvg:true  },
+    { label:"Total Income",        section:"income",   getValue:m=>m.totIncome,  bold:true,  showTotal:true,  showAvg:true  },
+    { label:"SR Bank Expenses",    section:"expenses", getValue:m=>m.srBankExp,  bold:false, showTotal:true,  showAvg:true  },
+    { label:"NR Bank Expenses",    section:"expenses", getValue:m=>m.nrBankExp,  bold:false, showTotal:true,  showAvg:true  },
+    { label:"CC Expenses",         section:"expenses", getValue:m=>m.ccExp,      bold:false, showTotal:true,  showAvg:true  },
+    { label:"Total Expenses",      section:"expenses", getValue:m=>m.totExp,     bold:true,  showTotal:true,  showAvg:true  },
+    { label:"SR Savings",          section:"savings",  getValue:m=>m.srSav,      bold:false, showTotal:true,  showAvg:true  },
+    { label:"NR Savings",          section:"savings",  getValue:m=>m.nrSav,      bold:false, showTotal:true,  showAvg:true  },
+    { label:"Total Savings",       section:"savings",  getValue:m=>m.totSav,     bold:true,  showTotal:true,  showAvg:true  },
+    { label:"SR Opening Balance",  section:"balance",  getValue:m=>m.srBal?.opening, bold:false, showTotal:false, showAvg:false },
+    { label:"SR Closing Balance",  section:"balance",  getValue:m=>m.srBal?.closing, bold:false, showTotal:false, showAvg:false },
+    { label:"NR Opening Balance",  section:"balance",  getValue:m=>m.nrBal?.opening, bold:false, showTotal:false, showAvg:false },
+    { label:"NR Closing Balance",  section:"balance",  getValue:m=>m.nrBal?.closing, bold:false, showTotal:false, showAvg:false },
     { label:"Total Final Balance", section:"balance",  getValue:m=>(m.srBal||m.nrBal)?(m.srBal?.closing||0)+(m.nrBal?.closing||0):null, bold:true, showTotal:false, showAvg:false },
   ];
 
-  // Month-over-month change in Total Final Balance
-  const balanceChanges = monthKeys.map((key, i) => {
+  const balanceChanges = monthKeys.map((key,i) => {
     const curr = data[i];
     if (!curr.srBal && !curr.nrBal) return null;
-    const currTotal = (curr.srBal?.closing||0) + (curr.nrBal?.closing||0);
-    if (i === 0) return null; // no previous month
-    // find closest previous month with balance data
+    const currTotal = (curr.srBal?.closing||0)+(curr.nrBal?.closing||0);
+    if (i===0) return null;
     let prev = null;
-    for (let j = i-1; j >= 0; j--) {
-      if (data[j].srBal || data[j].nrBal) { prev = data[j]; break; }
-    }
+    for (let j=i-1;j>=0;j--) { if (data[j].srBal||data[j].nrBal){prev=data[j];break;} }
     if (!prev) return null;
-    const prevTotal = (prev.srBal?.closing||0) + (prev.nrBal?.closing||0);
-    return currTotal - prevTotal;
+    return currTotal-((prev.srBal?.closing||0)+(prev.nrBal?.closing||0));
   });
 
-  // YTD
-  const ytd       = data.filter(m=>m.hasTx&&m.key<=curMK);
-  const ytdSRInc  = ytd.reduce((s,m)=>s+m.srIncome,0);
-  const ytdNRInc  = ytd.reduce((s,m)=>s+m.nrIncome,0);
-  const ytdInc    = ytdSRInc+ytdNRInc;
-  const ytdExp    = ytd.reduce((s,m)=>s+m.totExp,0);
-  const ytdSRSav  = ytd.reduce((s,m)=>s+m.srSav,0);
-  const ytdNRSav  = ytd.reduce((s,m)=>s+m.nrSav,0);
+  const ytd        = data.filter(m=>m.hasTx&&m.key<=curMK);
+  const ytdSRInc   = ytd.reduce((s,m)=>s+m.srIncome,0);
+  const ytdNRInc   = ytd.reduce((s,m)=>s+m.nrIncome,0);
+  const ytdExp     = ytd.reduce((s,m)=>s+m.totExp,0);
+  const ytdSRSav   = ytd.reduce((s,m)=>s+m.srSav,0);
+  const ytdNRSav   = ytd.reduce((s,m)=>s+m.nrSav,0);
   const latestWithBal = [...data].reverse().find(m=>m.srBal||m.nrBal);
   const latestClose   = (latestWithBal?.srBal?.closing||0)+(latestWithBal?.nrBal?.closing||0);
 
-  // Helper to compute total and average for a row
   function rowStats(row) {
-    const vals  = data.filter(m=>m.hasTx).map(m=>row.getValue(m)).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+    const vals = data.filter(m=>m.hasTx).map(m=>row.getValue(m)).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
     const total = vals.reduce((s,v)=>s+v,0);
-    const avg   = vals.length>0 ? Math.round(total/vals.length) : null;
-    return { total, avg, count: vals.length };
+    return { total, avg: vals.length>0?Math.round(total/vals.length):null };
   }
 
-  const sectionColors  = { income:"ann-income", expenses:"ann-expenses", savings:"ann-savings", balance:"ann-balance" };
-  const sectionLabels  = { income:"Income", expenses:"Expenses", savings:"Saving", balance:"Net Balance" };
-  let prevSection      = null;
+  const sectionColors = { income:"ann-income", expenses:"ann-expenses", savings:"ann-savings", balance:"ann-balance" };
+  const sectionLabels = { income:"Income", expenses:"Expenses", savings:"Saving", balance:"Net Balance" };
+  let prevSection = null;
 
   return (
     <div className="tab-pane">
@@ -1220,50 +1249,58 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
       <div className="print-header">{selectedYear} — Annual Summary</div>
 
       <div className="tiles-row">
-        <div className="tile"><div className="tile-label">YTD SR Income</div>  <div className="tile-value c-green">{fmt(ytdSRInc)}</div></div>
-        <div className="tile"><div className="tile-label">YTD NR Income</div>  <div className="tile-value c-green">{fmt(ytdNRInc)}</div></div>
-        <div className="tile"><div className="tile-label">YTD Total Income</div><div className="tile-value c-green">{fmt(ytdInc)}</div></div>
-        <div className="tile"><div className="tile-label">YTD Expenses</div>   <div className="tile-value c-red">{fmt(ytdExp)}</div></div>
-        <div className="tile"><div className="tile-label">YTD SR Savings</div> <div className="tile-value c-green">{fmt(ytdSRSav)}</div></div>
-        <div className="tile"><div className="tile-label">YTD NR Savings</div> <div className="tile-value c-green">{fmt(ytdNRSav)}</div></div>
-        <div className="tile"><div className="tile-label">Latest Balance</div>  <div className="tile-value" style={{fontWeight:700}}>{fmt(latestClose)}</div><div className="tile-sub">{latestWithBal ? `SR ${fmt(latestWithBal.srBal?.closing||0)} · NR ${fmt(latestWithBal.nrBal?.closing||0)}` : "—"}</div></div>
+        {[
+          { label:"YTD SR Income",    val:ytdSRInc,   cls:"c-green" },
+          { label:"YTD NR Income",    val:ytdNRInc,   cls:"c-green" },
+          { label:"YTD Total Income", val:ytdSRInc+ytdNRInc, cls:"c-green" },
+          { label:"YTD Expenses",     val:ytdExp,     cls:"c-red"   },
+          { label:"YTD SR Savings",   val:ytdSRSav,   cls:"c-green" },
+          { label:"YTD NR Savings",   val:ytdNRSav,   cls:"c-green" },
+          { label:"Latest Balance",   val:latestClose, cls:"",       sub: latestWithBal?`SR ${fmt(latestWithBal.srBal?.closing||0)} · NR ${fmt(latestWithBal.nrBal?.closing||0)}`:"—" },
+        ].map((t,i) => (
+          <div key={i} className="tile">
+            <div className="tile-label">{t.label}</div>
+            <div className={`tile-value ${t.cls}`} style={{fontWeight:700}}>{fmt(t.val)}</div>
+            {t.sub && <div className="tile-sub">{t.sub}</div>}
+          </div>
+        ))}
       </div>
 
       <div className="table-wrap card annual-pivot-wrap">
         <table className="tx-tbl annual-pivot">
           <thead>
             <tr>
-              <th className="ann-sticky-col" style={{textAlign:"left"}}>Category</th>
+              <th className="ann-sticky-col" style={{textAlign:"left",fontSize:11}}>Category</th>
               {MONTH_NAMES.map((mn,i) => {
                 const key=monthKeys[i], isCur=key===curMK, isFut=key>curMK&&!data[i].hasTx;
-                return <th key={mn} style={{textAlign:"right",minWidth:58}} className={isCur?"ann-cur-col":isFut?"ann-fut-col":""}>{mn}{isCur&&<span className="current-dot"> ●</span>}</th>;
+                return <th key={mn} className={`ann-month-hdr${isCur?" ann-cur-col":isFut?" ann-fut-col":""}`}>{mn}{isCur&&<span className="current-dot"> ●</span>}</th>;
               })}
-              <th style={{textAlign:"right",minWidth:68}}>Total</th>
-              <th style={{textAlign:"right",minWidth:68}}>Avg/mo</th>
+              <th className="ann-total-hdr">Total</th>
+              <th className="ann-avg-hdr">Avg/mo</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row,ri) => {
-              const showSectionHeader = row.section !== prevSection;
-              prevSection = row.section;
-              const sectionCls = sectionColors[row.section]||"";
+              const showSec = row.section !== prevSection;
+              prevSection   = row.section;
+              const secCls  = sectionColors[row.section]||"";
               const { total, avg } = rowStats(row);
 
               return [
-                showSectionHeader && (
-                  <tr key={`sec-${row.section}`} className={`ann-section-hdr ${sectionCls}`}>
-                    <td colSpan={15} className="ann-sticky-col ann-section-label">{sectionLabels[row.section]}</td>
+                showSec && (
+                  <tr key={`sec-${row.section}`} className={`ann-section-hdr ${secCls}`}>
+                    <td colSpan={16} className="ann-sticky-col ann-section-label">{sectionLabels[row.section]}</td>
                   </tr>
                 ),
-                <tr key={ri} className={`tx-row ann-data-row ${sectionCls}`}>
+                <tr key={ri} className={`tx-row ann-data-row ${secCls}`}>
                   <td className={`ann-sticky-col ann-row-label${row.bold?" ann-bold":""}`}>{row.label}</td>
                   {data.map((m,mi) => {
-                    const val   = row.getValue(m);
-                    const isCur = m.key===curMK;
-                    const isFut = m.key>curMK&&!m.hasTx;
-                    const hasVal= val!==null && val!==undefined && !isNaN(val) && (m.hasTx || row.section==="balance");
+                    const val    = row.getValue(m);
+                    const isCur  = m.key===curMK;
+                    const isFut  = m.key>curMK&&!m.hasTx;
+                    const hasVal = val!==null&&val!==undefined&&!isNaN(val)&&(m.hasTx||row.section==="balance");
                     return (
-                      <td key={mi} style={{textAlign:"right"}} className={isFut?"ann-fut-col":""}>
+                      <td key={mi} className={`ann-data-cell${isFut?" ann-fut-col":""}`}>
                         {hasVal
                           ? <span className={`${row.bold?"ann-bold":""} ${isCur?"ann-cur-val":""}`}>{fmt(val)}</span>
                           : <span className="c-muted">—</span>
@@ -1271,17 +1308,15 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
                       </td>
                     );
                   })}
-                  {/* Total column */}
-                  <td style={{textAlign:"right"}}>
+                  <td className="ann-total-cell">
                     {row.showTotal && total>0
-                      ? <span className={row.bold?"ann-bold":""}>{fmt(total)}</span>
+                      ? <span className={row.bold?"ann-bold":"ann-total-val"}>{fmt(total)}</span>
                       : <span className="c-muted">—</span>
                     }
                   </td>
-                  {/* Average column */}
-                  <td style={{textAlign:"right"}}>
+                  <td className="ann-avg-cell">
                     {row.showAvg && avg!==null && avg>0
-                      ? <span className="c-muted">{fmt(avg)}</span>
+                      ? <span className="ann-avg-val">{fmt(avg)}</span>
                       : <span className="c-muted">—</span>
                     }
                   </td>
@@ -1289,19 +1324,18 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
               ];
             })}
 
-            {/* Change in Balance row */}
+            {/* Change in Balance */}
             <tr className="ann-section-hdr ann-balance">
-              <td colSpan={15} className="ann-sticky-col ann-section-label">Change in Balance</td>
+              <td colSpan={16} className="ann-sticky-col ann-section-label">Change in Balance</td>
             </tr>
             <tr className="tx-row ann-data-row ann-balance">
               <td className="ann-sticky-col ann-row-label ann-bold">Month-over-Month</td>
-              {balanceChanges.map((change, i) => {
-                const isCur = monthKeys[i]===curMK;
+              {balanceChanges.map((change,i) => {
                 const isFut = monthKeys[i]>curMK&&!data[i].hasTx;
                 return (
-                  <td key={i} style={{textAlign:"right"}} className={isFut?"ann-fut-col":""}>
+                  <td key={i} className={`ann-data-cell${isFut?" ann-fut-col":""}`}>
                     {change!==null
-                      ? <span style={{fontWeight:600, color: change>=0?"var(--green)":"var(--red)"}}>
+                      ? <span style={{fontWeight:700, color:change>=0?"var(--green)":"var(--red)"}}>
                           {change>=0?"+":""}{fmt(Math.abs(change))}
                         </span>
                       : <span className="c-muted">—</span>
@@ -1309,13 +1343,13 @@ function AnnualTab({ transactions, categories, accountBalances, selectedYear, on
                   </td>
                 );
               })}
-              <td style={{textAlign:"right"}} className="c-muted">—</td>
-              <td style={{textAlign:"right"}}>
+              <td className="ann-total-cell"><span className="c-muted">—</span></td>
+              <td className="ann-avg-cell">
                 {(() => {
-                  const validChanges = balanceChanges.filter(c=>c!==null);
-                  if (validChanges.length===0) return <span className="c-muted">—</span>;
-                  const avg = Math.round(validChanges.reduce((s,c)=>s+c,0)/validChanges.length);
-                  return <span style={{color: avg>=0?"var(--green)":"var(--red)", fontWeight:500}}>{avg>=0?"+":""}{fmt(Math.abs(avg))}</span>;
+                  const valid = balanceChanges.filter(c=>c!==null);
+                  if (!valid.length) return <span className="c-muted">—</span>;
+                  const avg = Math.round(valid.reduce((s,c)=>s+c,0)/valid.length);
+                  return <span style={{color:avg>=0?"var(--green)":"var(--red)",fontWeight:500}}>{avg>=0?"+":""}{fmt(Math.abs(avg))}</span>;
                 })()}
               </td>
             </tr>
