@@ -598,7 +598,7 @@ export default function App() {
       </nav>
 
       <div className="tab-content">
-        {activeTab==="overview"     && <OverviewTab transactions={transactions} categories={categories} monthlyOverrides={monthlyOverrides} selectedMonth={selectedMonth} accountBalances={accountBalances} onPrevMonth={prevMonth} onNextMonth={nextMonth} onGoToTransactions={() => setActiveTab("transactions")} onSetOverride={setMonthlyOverride} onResetOverride={resetMonthlyOverride} hasOverride={hasOverride} />}
+        {activeTab==="overview"     && <OverviewTab transactions={transactions} categories={categories} monthlyOverrides={monthlyOverrides} selectedMonth={selectedMonth} accountBalances={accountBalances} onPrevMonth={prevMonth} onNextMonth={nextMonth} onGoToTransactions={() => setActiveTab("transactions")} onSetOverride={setMonthlyOverride} onResetOverride={resetMonthlyOverride} hasOverride={hasOverride} onCategoriesChange={setCategories} />}
         {activeTab==="transactions" && <TransactionsTab transactions={transactions} categories={categories} merchantMemory={merchantMemory} selectedMonth={selectedMonth} onPrevMonth={prevMonth} onNextMonth={nextMonth} onImport={handleImport} onUpdateTransaction={updateTransaction} onDeleteTransaction={deleteTransaction} onClearMonth={clearMonth} onBulkReCategorize={bulkReCategorize} onCategoriesChange={setCategories} onUpdateMerchantMemory={updateMerchantMemory} showToast={showToast} />}
         {activeTab==="investments"  && <InvestmentsTab investments={investments} onInvestmentsChange={setInvestments} showToast={showToast} />}
         {activeTab==="annual"       && <AnnualTab transactions={transactions} categories={categories} monthlyOverrides={monthlyOverrides} accountBalances={accountBalances} selectedYear={selectedYear} onPrevYear={() => setSelectedYear(y=>y-1)} onNextYear={() => setSelectedYear(y=>y+1)} />}
@@ -609,11 +609,12 @@ export default function App() {
 
 // ─── OVERVIEW TAB ─────────────────────────────────────────────────────────────
 
-function OverviewTab({ transactions, categories, monthlyOverrides, selectedMonth, accountBalances, onPrevMonth, onNextMonth, onGoToTransactions, onSetOverride, onResetOverride, hasOverride }) {
+function OverviewTab({ transactions, categories, monthlyOverrides, selectedMonth, accountBalances, onPrevMonth, onNextMonth, onGoToTransactions, onSetOverride, onResetOverride, hasOverride, onCategoriesChange }) {
   const [headExp,     setHeadExp]     = useState({});
   const [savExp,      setSavExp]      = useState(false);
   const [tfExp,       setTfExp]       = useState(false);
-  const [editBudget,  setEditBudget]  = useState(null); // { subKey, value }
+  const [editBudget,  setEditBudget]  = useState(null);
+  const [showCatMgr,  setShowCatMgr]  = useState(false);
 
   const monthTxs = transactions.filter(t => t.month===selectedMonth);
   const counted  = monthTxs.filter(t => !t.isTransfer && t.mainCategory && t.section);
@@ -678,12 +679,15 @@ function OverviewTab({ transactions, categories, monthlyOverrides, selectedMonth
           <span className="month-label">{monthLabel(selectedMonth)}</span>
           <button className="btn-ghost" onClick={onNextMonth}>▶</button>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
           <span className="override-legend">💡 Click any budget value to override for this month only · ● = override active (click to reset)</span>
           <button className="btn-ghost btn-sm" onClick={onGoToTransactions}>⬆ Upload CSV</button>
+          <button className={`btn-ghost btn-sm${showCatMgr?" active":""}`} onClick={()=>setShowCatMgr(s=>!s)}>⚙ Categories</button>
         </div>
       </div>
       <div className="print-header">{monthLabel(selectedMonth)} — Overview</div>
+
+      {showCatMgr && <CategoryManager categories={categories} onChange={onCategoriesChange} onClose={()=>setShowCatMgr(false)} />}
 
       <div className="card">
         <div className="bank-header">
