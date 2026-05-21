@@ -296,31 +296,14 @@ export default function App() {
   function prevMonth(){const[y,m]=selectedMonth.split("-").map(Number);setSelectedMonth(m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,"0")}`);}
   function nextMonth(){const[y,m]=selectedMonth.split("-").map(Number);setSelectedMonth(m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,"0")}`);}
 
-  // Save Transactions-context category changes:
-  // Month is already locked — save budget amounts and structure to monthlyBudgets[selectedMonth] only
+  // Save Transactions-context: saves full categories snapshot to monthlyCategories[selectedMonth] only
   // Standard template (global categories) is NEVER modified from here
   function handleTransactionsCategorySave(newCats) {
-    // Save full budget map to this month's locked budget
-
-    setMonthlyBudgets(prev => ({
+    setMonthlyCategories(prev => ({
       ...prev,
-      [selectedMonth]: newBudgetMap,
+      [selectedMonth]: JSON.parse(JSON.stringify(newCats)),
     }));
-    // Update global categories STRUCTURE only (new heads/subs added) — keep original standard budgets
-    const structureCats = JSON.parse(JSON.stringify(newCats));
-    for (const h of structureCats.income) {
-      const orig = categories.income.find(o => o.head === h.head);
-      h.budget = orig ? { ...Object.fromEntries(h.subs.map(s=>[s,0])), ...orig.budget } : Object.fromEntries(h.subs.map(s=>[s,0]));
-    }
-    for (const h of structureCats.expenses) {
-      const orig = categories.expenses.find(o => o.head === h.head);
-      h.budget = orig ? { ...Object.fromEntries(h.subs.map(s=>[s,0])), ...orig.budget } : Object.fromEntries(h.subs.map(s=>[s,0]));
-    }
-    for (const h of structureCats.savings) {
-      const orig = categories.savings.find(o => o.head === h.head);
-      h.budget = orig ? orig.budget : 0;
-    }
-    setCategories(structureCats);
+    showToast(`${monthLabel(selectedMonth)} budget saved and locked 🔒`);
   }
 
   // Save Annual Standard Template changes → global categories only
@@ -381,18 +364,6 @@ export default function App() {
       return[...base,...toAdd];
     });
     if(balanceInfo){setAccountBalances(prev=>{const u={...prev};months.forEach(m=>{u[`${accountId}-${m}`]=balanceInfo;});return u;});}
-    // Auto-lock each month on FIRST import — copy standard template budget into monthlyBudgets
-    // If month already has a budget (locked), do not overwrite
-    setMonthlyBudgets(prev=>{
-      const u={...prev};
-      months.forEach(m=>{
-        if(!u[m]){
-          // First time data is imported for this month — lock it with current standard template
-          u[m]=buildStandardBudgetMap(categories);
-        }
-      });
-      return u;
-    });
     setDupPrompt(null);
   }
 
@@ -401,8 +372,8 @@ export default function App() {
   function clearMonth(key){
     setTransactions(prev=>prev.filter(t=>t.month!==key));
     setAccountBalances(prev=>{const u={...prev};ACCOUNTS.forEach(a=>delete u[`${a.id}-${key}`]);return u;});
-    // Unlock month — remove its locked budget so standard template applies again
-    setMonthlyBudgets(prev=>{const u={...prev};delete u[key];return u;});
+    // Unlock month — delete snapshot so standard template applies again
+    setMonthlyCategories(prev=>{const u={...prev};delete u[key];return u;});
     showToast(`Cleared ${monthLabel(key)}`);
   }
   function updateMerchantMemory(descKey,rule){setMerchantMemory(prev=>({...prev,[descKey.toLowerCase().trim()]:rule}));}
