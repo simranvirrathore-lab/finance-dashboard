@@ -1,4 +1,4 @@
-/* ── Rathore Finance Dashboard — App.css v7 ── */
+/* ── Rathore Finance Dashboard — App.css v8 ── */
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700&display=swap');
 
 :root {
@@ -129,16 +129,10 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .acc-item-row:hover { background:var(--bg3); }
 .acc-item-name { font-size:13px; color:var(--text2); }
 
-/* BUDGET OVERRIDE SYSTEM */
-.override-legend { font-size:11px; color:var(--text3); }
-.budget-cell-wrap { display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
-.budget-cell-val { font-family:var(--mono); font-size:13px; font-weight:500; }
-.budget-cell-val:hover { color:var(--text); text-decoration:underline; }
-.budget-override { color:var(--accent) !important; }
-.override-dot { color:var(--accent); font-size:8px; cursor:pointer; margin-left:2px; }
-.override-dot:hover { color:var(--red); }
-.budget-edit-wrap { display:inline-block; }
-.budget-edit-inp { width:80px; background:var(--bg4); border:1px solid var(--accent); border-radius:4px; padding:2px 6px; color:var(--text); font-size:12px; font-family:var(--mono); text-align:right; outline:none; }
+/* MONTHLY BUDGET INDICATORS */
+.monthly-budget-badge { font-size:11px; color:var(--accent); background:rgba(124,106,240,.12); border:1px solid rgba(124,106,240,.3); padding:3px 9px; border-radius:99px; }
+.monthly-budget-dot { color:var(--accent); font-size:11px; margin-left:3px; }
+.ann-mb-dot { color:var(--accent); font-size:9px; margin-left:1px; vertical-align:super; }
 
 /* FILTER BAR */
 .filter-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -187,7 +181,7 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .cat-mgr { padding:0; }
 .cat-mgr-hdr { display:flex; align-items:flex-start; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--border); gap:8px; }
 .cat-mgr-title { font-size:13px; font-weight:600; color:var(--text); }
-.cat-mgr-subtitle { font-size:11px; color:var(--text3); margin-top:3px; }
+.cat-mgr-subtitle { font-size:11px; color:var(--text3); margin-top:4px; line-height:1.5; }
 .cat-section { padding:14px 16px; border-bottom:1px solid var(--border); }
 .cat-section-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text3); margin-bottom:10px; }
 .cat-head-block { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:8px; overflow:hidden; }
@@ -211,34 +205,24 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .inv-total-tile { max-width:280px; }
 .acc-chip { display:inline-block; font-size:11px; padding:2px 7px; border-radius:99px; background:var(--bg4); border:1px solid var(--border2); color:var(--text2); white-space:nowrap; }
 
-/* ── ANNUAL TABLE — SHARP & PROFESSIONAL ─────────────────────────── */
+/* ANNUAL TABLE */
 .annual-pivot-wrap { overflow-x:auto; }
 .annual-pivot { width:100%; border-collapse:collapse; font-size:13px; min-width:960px; }
-
-/* Header row */
 .annual-pivot thead tr { border-bottom:2px solid var(--border2); }
 .annual-pivot th { padding:9px 8px; text-align:right; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text3); background:var(--bg3); white-space:nowrap; }
 .ann-month-hdr { min-width:62px; }
 .ann-total-hdr { min-width:74px; border-left:1px solid var(--border2); color:var(--text2); }
 .ann-avg-hdr   { min-width:74px; border-left:1px solid var(--border); color:var(--text3); }
-
-/* Data cells */
 .annual-pivot td { padding:8px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
 .ann-data-cell { text-align:right; font-family:var(--mono); font-size:13px; font-weight:500; color:var(--text); }
 .ann-total-cell { text-align:right; font-family:var(--mono); font-size:13px; border-left:1px solid var(--border2); }
 .ann-avg-cell   { text-align:right; font-family:var(--mono); font-size:12px; border-left:1px solid var(--border); }
 .ann-total-val  { font-weight:600; color:var(--text); }
 .ann-avg-val    { font-weight:400; color:var(--text2); }
-
-/* Sticky category column */
 .ann-sticky-col { position:sticky; left:0; background:var(--bg2); z-index:2; text-align:left !important; font-family:var(--font) !important; font-size:13px; min-width:155px; white-space:nowrap; padding-right:12px; }
 .annual-pivot th.ann-sticky-col { background:var(--bg3); z-index:3; font-size:10px; }
-
-/* Section headers */
 .ann-section-hdr td { padding:6px 8px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.10em; border-bottom:1px solid var(--border2); }
 .ann-section-label { font-family:var(--font) !important; font-size:10px !important; letter-spacing:.10em; }
-
-/* Section background colors */
 .ann-income   { background:var(--ann-income);   }
 .ann-expenses { background:var(--ann-expenses);  }
 .ann-savings  { background:var(--ann-savings);   }
@@ -247,22 +231,16 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 .ann-section-hdr.ann-expenses { background:var(--ann-expenses-hdr); }
 .ann-section-hdr.ann-savings  { background:var(--ann-savings-hdr);  }
 .ann-section-hdr.ann-balance  { background:var(--ann-balance-hdr);  }
-
-/* Sticky col inherits section color */
-.ann-income   .ann-sticky-col  { background:var(--ann-income);   }
-.ann-expenses .ann-sticky-col  { background:var(--ann-expenses);  }
-.ann-savings  .ann-sticky-col  { background:var(--ann-savings);   }
-.ann-balance  .ann-sticky-col  { background:var(--ann-balance);   }
+.ann-income   .ann-sticky-col { background:var(--ann-income);   }
+.ann-expenses .ann-sticky-col { background:var(--ann-expenses);  }
+.ann-savings  .ann-sticky-col { background:var(--ann-savings);   }
+.ann-balance  .ann-sticky-col { background:var(--ann-balance);   }
 .ann-section-hdr.ann-income   .ann-sticky-col { background:var(--ann-income-hdr);   }
 .ann-section-hdr.ann-expenses .ann-sticky-col { background:var(--ann-expenses-hdr); }
 .ann-section-hdr.ann-savings  .ann-sticky-col { background:var(--ann-savings-hdr);  }
 .ann-section-hdr.ann-balance  .ann-sticky-col { background:var(--ann-balance-hdr);  }
-
-/* Row labels */
 .ann-row-label { color:var(--text2); font-weight:500; font-family:var(--font) !important; font-size:13px !important; }
 .ann-bold { font-weight:700 !important; color:var(--text) !important; }
-
-/* Highlight states */
 .ann-cur-col { background:rgba(124,106,240,.10) !important; }
 .ann-fut-col { opacity:.35; }
 .ann-cur-val { color:var(--accent) !important; font-weight:700 !important; }
@@ -301,18 +279,18 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
 ::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:3px; }
 ::-webkit-scrollbar-thumb:hover { background:var(--border3); }
 
-/* ── PRINT / PDF ─────────────────────────────────────────────────── */
+/* PRINT */
 @media print {
   :root {
-    --bg:#fff; --bg2:#fff; --bg3:#f4f4f6; --bg4:#eaeaee;
-    --border:rgba(0,0,0,0.10); --border2:rgba(0,0,0,0.15);
-    --text:#111; --text2:#444; --text3:#888;
-    --green:#1a7a3e; --red:#c0392b; --amber:#b7760d; --accent:#5548c8;
-    --ann-income:#eff6ff; --ann-expenses:#fff5f5; --ann-savings:#f0fff4; --ann-balance:#f8fafc;
-    --ann-income-hdr:#dbeafe; --ann-expenses-hdr:#fee2e2; --ann-savings-hdr:#dcfce7; --ann-balance-hdr:#f1f5f9;
+    --bg:#fff;--bg2:#fff;--bg3:#f4f4f6;--bg4:#eaeaee;
+    --border:rgba(0,0,0,0.10);--border2:rgba(0,0,0,0.15);
+    --text:#111;--text2:#444;--text3:#888;
+    --green:#1a7a3e;--red:#c0392b;--amber:#b7760d;--accent:#5548c8;
+    --ann-income:#eff6ff;--ann-expenses:#fff5f5;--ann-savings:#f0fff4;--ann-balance:#f8fafc;
+    --ann-income-hdr:#dbeafe;--ann-expenses-hdr:#fee2e2;--ann-savings-hdr:#dcfce7;--ann-balance-hdr:#f1f5f9;
   }
   body { background:#fff; color:#111; }
-  .no-print,.tab-bar,.month-bar,.filter-bar,.data-mgmt,.bulk-bar,.cat-mgr,.dup-overlay,.toast,.btn-del,.nav-actions,.tab-badge,.override-legend { display:none !important; }
+  .no-print,.tab-bar,.month-bar,.filter-bar,.data-mgmt,.bulk-bar,.cat-mgr,.dup-overlay,.toast,.btn-del,.nav-actions,.tab-badge,.monthly-budget-badge { display:none !important; }
   .print-header { display:block; font-size:16px; font-weight:700; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #111; font-family:var(--font); }
   .app-root { min-height:unset; }
   .tab-content { max-width:100%; padding:0 8px; }
@@ -323,8 +301,6 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
   .table-wrap,.annual-pivot-wrap { overflow-x:visible; }
   .ann-sticky-col { position:static; background:transparent !important; }
   .annual-pivot { font-size:11px; }
-  .ann-total-hdr,.ann-avg-hdr { border-left:1px solid #ccc; }
-  .ann-total-cell,.ann-avg-cell { border-left:1px solid #eee; }
   .ann-fut-col { opacity:.6; }
   .tiles-row { flex-wrap:wrap; gap:6px; }
   .tile { border:1px solid #ccc; min-width:120px; padding:10px 12px; }
