@@ -317,18 +317,36 @@ export default function App() {
   function nextMonth(){const[y,m]=selectedMonth.split("-").map(Number);setSelectedMonth(m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,"0")}`);}
 
   // Save Transactions-context category changes:
-  // - Structure (heads/subs) → global categories
-  // - Budget amounts → monthlyBudgets[selectedMonth]
+  // - Budget amounts → monthlyBudgets[selectedMonth] ONLY (never touch standard template)
+  // - Structure (new heads/subs) → global categories with ORIGINAL standard budget amounts preserved
   function handleTransactionsCategorySave(newCats) {
-    // Extract new budget map
+    // 1. Save ALL budget amounts to monthly budget for THIS month only
     const newBudgetMap = extractBudgetMap(newCats);
-    // Save structure to global categories (keep standard budget amounts untouched)
-    setCategories(newCats);
-    // Also save budget amounts as monthly budget for selected month
     setMonthlyBudgets(prev => ({
       ...prev,
-      [selectedMonth]: { ...(prev[selectedMonth]||{}), ...newBudgetMap }
+      [selectedMonth]: newBudgetMap,
     }));
+
+    // 2. Update global categories for STRUCTURE ONLY
+    // Restore original standard budget amounts — budget changes stay in monthlyBudgets
+    const structureCats = JSON.parse(JSON.stringify(newCats));
+    for (const h of structureCats.income) {
+      const orig = categories.income.find(o => o.head === h.head);
+      h.budget = orig
+        ? { ...Object.fromEntries(h.subs.map(s => [s, 0])), ...orig.budget }
+        : Object.fromEntries(h.subs.map(s => [s, 0]));
+    }
+    for (const h of structureCats.expenses) {
+      const orig = categories.expenses.find(o => o.head === h.head);
+      h.budget = orig
+        ? { ...Object.fromEntries(h.subs.map(s => [s, 0])), ...orig.budget }
+        : Object.fromEntries(h.subs.map(s => [s, 0]));
+    }
+    for (const h of structureCats.savings) {
+      const orig = categories.savings.find(o => o.head === h.head);
+      h.budget = orig ? orig.budget : 0;
+    }
+    setCategories(structureCats);
   }
 
   // Save Annual Standard Template changes → global categories only
