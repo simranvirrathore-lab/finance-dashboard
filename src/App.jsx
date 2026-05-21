@@ -608,6 +608,10 @@ function TransactionsTab({transactions,categories,monthlyCategories,merchantMemo
   const bankExpenses=isFilteredByBank?filtered.filter(t=>t.section==="expenses").reduce((s,t)=>s+Math.abs(t.amount),0):0;
   const bankSavings=isFilteredByBank?filtered.filter(t=>t.section==="savings").reduce((s,t)=>s+Math.abs(t.amount),0):0;
 
+  // Use locked month snapshot if available, else standard template
+  const activeCats = monthlyCategories?.[selectedMonth] || categories;
+  const isLocked = !!monthlyCategories?.[selectedMonth];
+
   const allMainCats=[...activeCats.income.map(h=>({main:h.head,section:"income"})),...activeCats.expenses.map(h=>({main:h.head,section:"expenses"})),...activeCats.savings.map(h=>({main:h.head,section:"savings"})),{main:"TRANSFER",section:"transfer"}];
   function getSubsFor(mainCat){const ih=activeCats.income.find(h=>h.head===mainCat);if(ih)return ih.subs;const eh=activeCats.expenses.find(h=>h.head===mainCat);if(eh)return eh.subs;const sh=activeCats.savings.find(h=>h.head===mainCat);if(sh)return[sh.head];if(mainCat==="TRANSFER")return["CC Payment","Transfer — Exclude"];return[];}
 
