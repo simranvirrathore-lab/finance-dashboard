@@ -325,3 +325,26 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
   .nav-actions .btn-ghost { padding:4px 8px; font-size:11px; }
   .ann-month-hdr { min-width:50px; }
 }
+
+/* ── OVERVIEW MOBILE FIX ─────────────────────────────────── */
+/* Bank accounts card — scroll horizontally on small screens */
+.bank-header,
+.bank-row { min-width: 480px; }
+
+.card:has(.bank-header) { overflow-x: auto; }
+
+/* Accordion — prevent overflow on small screens */
+.acc-card { overflow-x: auto; }
+.acc-col-header,
+.acc-section-row,
+.acc-head-row,
+.acc-item-row { min-width: 380px; }
+
+/* Tiles — stack 2×2 on mobile instead of 1 row */
+@media (max-width: 480px) {
+  .tiles-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tile { min-width: unset; }
+  .tile-value { font-size: 17px; }
+  .bank-col { min-width: 85px; font-size: 12px; }
+  .col-hdr  { min-width: 85px; font-size: 9px; }
+}
