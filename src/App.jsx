@@ -396,8 +396,14 @@ export default function App() {
     let toAdd = [];
     setTransactions(prev=>{
       const base=replace?prev.filter(t=>!(t.account===accountId&&months.includes(t.month))):prev;
-      const keys=new Set(base.map(t=>`${t.date}|${t.description}|${t.amount}|${t.account}`));
-      toAdd=newTxs.filter(t=>!keys.has(`${t.date}|${t.description}|${t.amount}|${t.account}`));
+      const exactKeys=new Set(base.map(t=>`${t.date}|${t.description}|${t.amount}|${t.account}`));
+      // Fuzzy dedup: same date+amount+account catches Gmail vs CSV description differences
+      const fuzzyKeys=new Set(base.map(t=>`${t.date}|${t.amount}|${t.account}`));
+      toAdd=newTxs.filter(t=>{
+        if(exactKeys.has(`${t.date}|${t.description}|${t.amount}|${t.account}`)) return false;
+        if(fuzzyKeys.has(`${t.date}|${t.amount}|${t.account}`)) return false;
+        return true;
+      });
       const uncat=toAdd.filter(t=>!t.mainCategory&&!t.isTransfer).length;
       showToast(`${toAdd.length} imported · ${uncat} need review`);
       return[...base,...toAdd];
