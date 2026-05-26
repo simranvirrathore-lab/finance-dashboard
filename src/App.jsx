@@ -279,6 +279,9 @@ export default function App() {
   const nowKey=(()=>{const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}`;})();
   const [selectedMonth,setSelectedMonth]=useState(nowKey);
   const [selectedYear, setSelectedYear] =useState(new Date().getFullYear());
+  const [syncing, setSyncing] = useState(true);
+  const [syncError, setSyncError] = useState(false);
+  const lastSyncRef = useRef(null);
   const load=(key,def)=>{try{const v=localStorage.getItem(key);return v?JSON.parse(v):def;}catch{return def;}};
 
   const [transactions,    setTransactions]    =useState(()=>load("rf_transactions",[]));
@@ -292,6 +295,28 @@ export default function App() {
   const [toast,setToast]=useState(null);
   const [dupPrompt,setDupPrompt]=useState(null);
   const importRef=useRef();
+
+  // Pull from Supabase on app load
+  useEffect(()=>{
+    async function loadFromCloud() {
+      try {
+        setSyncing(true);
+        const cloud = await dbPullAll();
+        if (cloud.transactions?.length)   setTransactions(cloud.transactions);
+        if (cloud.categories)             setCategories(cloud.categories);
+        if (cloud.monthlyCategories && Object.keys(cloud.monthlyCategories).length) setMonthlyCategories(cloud.monthlyCategories);
+        if (cloud.balances && Object.keys(cloud.balances).length) setAccountBalances(cloud.balances);
+        if (cloud.merchantMemory && Object.keys(cloud.merchantMemory).length) setMerchantMemory(cloud.merchantMemory);
+        lastSyncRef.current = new Date();
+      } catch(e) {
+        console.error("Supabase load failed, using local data", e);
+        setSyncError(true);
+      } finally {
+        setSyncing(false);
+      }
+    }
+    loadFromCloud();
+  }, []);
 
   useEffect(()=>{localStorage.setItem("rf_transactions",    JSON.stringify(transactions));   },[transactions]);
   useEffect(()=>{localStorage.setItem("rf_categories",      JSON.stringify(categories));     },[categories]);
