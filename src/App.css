@@ -348,3 +348,9 @@ button,input,select,textarea { font-family:var(--font); font-size:13px; color:in
   .bank-col { min-width: 85px; font-size: 12px; }
   .col-hdr  { min-width: 85px; font-size: 9px; }
 }
+
+/* ── SYNC STATUS ─────────────────────────────────────────── */
+.sync-badge  { font-size:11px; color:var(--text3); animation:spin 1s linear infinite; display:inline-block; }
+.sync-ok     { font-size:11px; color:var(--green); }
+.sync-error  { font-size:11px; color:var(--amber); cursor:help; }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }

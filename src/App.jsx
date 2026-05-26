@@ -1,5 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import "./App.css";
+import {
+  supabase,
+  dbPullAll, dbPushAll,
+  dbUpsertTransactions, dbDeleteTransaction, dbDeleteMonthTransactions,
+  dbSaveCategories, dbSaveMonthlyCategory, dbDeleteMonthlyCategory,
+  dbSaveBalance, dbDeleteBalances,
+  dbSaveMerchantMemory,
+} from "./supabase.js";
 
 // ─── ACCOUNTS ────────────────────────────────────────────────────────────────
 
@@ -297,26 +305,31 @@ export default function App() {
   function nextMonth(){const[y,m]=selectedMonth.split("-").map(Number);setSelectedMonth(m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,"0")}`);}
 
   // Save Transactions-context: saves full categories snapshot to monthlyCategories[selectedMonth] only
-  // Standard template (global categories) is NEVER modified from here
   function handleTransactionsCategorySave(newCats) {
-    setMonthlyCategories(prev => ({
-      ...prev,
-      [selectedMonth]: JSON.parse(JSON.stringify(newCats)),
-    }));
+    const snap = JSON.parse(JSON.stringify(newCats));
+    setMonthlyCategories(prev => ({ ...prev, [selectedMonth]: snap }));
+    dbSaveMonthlyCategory(selectedMonth, snap).catch(console.error);
     showToast(`${monthLabel(selectedMonth)} budget saved and locked 🔒`);
   }
 
-  // Save Annual Standard Template changes → global categories only
+  // Save Annual Standard Template changes → global categories + Supabase
   function handleStandardTemplateSave(newCats) {
     setCategories(newCats);
+    dbSaveCategories(newCats).catch(console.error);
     showToast("Standard template saved — applies to all months without a custom budget");
   }
 
-  function handleExport(){
+  async function handleExport(){
     const data={transactions,categories,monthlyCategories,balances:accountBalances,merchantMemory,investments,exportDate:new Date().toISOString(),version:"v9"};
     const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
     const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`rathore-finance-${new Date().toISOString().split("T")[0]}.json`;a.click();URL.revokeObjectURL(url);
-    showToast("Data exported successfully");
+    // Also push to Supabase as full backup
+    try {
+      await dbPushAll({transactions,categories,monthlyCategories,accountBalances,merchantMemory});
+      showToast("Data exported and synced to cloud ✅");
+    } catch(e) {
+      showToast("Exported locally (cloud sync failed)");
+    }
   }
 
   function handleImportFile(e){
@@ -354,29 +367,55 @@ export default function App() {
     else commitImport(newTxs,accountId,months,balanceInfo,false);
   }
 
-  function commitImport(newTxs,accountId,months,balanceInfo,replace){
+  async function commitImport(newTxs,accountId,months,balanceInfo,replace){
+    let toAdd = [];
     setTransactions(prev=>{
       const base=replace?prev.filter(t=>!(t.account===accountId&&months.includes(t.month))):prev;
       const keys=new Set(base.map(t=>`${t.date}|${t.description}|${t.amount}|${t.account}`));
-      const toAdd=newTxs.filter(t=>!keys.has(`${t.date}|${t.description}|${t.amount}|${t.account}`));
+      toAdd=newTxs.filter(t=>!keys.has(`${t.date}|${t.description}|${t.amount}|${t.account}`));
       const uncat=toAdd.filter(t=>!t.mainCategory&&!t.isTransfer).length;
       showToast(`${toAdd.length} imported · ${uncat} need review`);
       return[...base,...toAdd];
     });
-    if(balanceInfo){setAccountBalances(prev=>{const u={...prev};months.forEach(m=>{u[`${accountId}-${m}`]=balanceInfo;});return u;});}
+    if(balanceInfo){
+      setAccountBalances(prev=>{const u={...prev};months.forEach(m=>{u[`${accountId}-${m}`]=balanceInfo;});return u;});
+      // Sync balances to Supabase
+      for (const m of months) {
+        dbSaveBalance(accountId, m, balanceInfo.opening, balanceInfo.closing).catch(console.error);
+      }
+    }
+    // Sync new transactions to Supabase
+    if(toAdd.length) dbUpsertTransactions(toAdd).catch(console.error);
     setDupPrompt(null);
   }
 
-  function updateTransaction(id,updates){setTransactions(prev=>prev.map(t=>{if(t.id!==id)return t;const u={...t,...updates};if(updates.date)u.month=toMonthKey(updates.date);return u;}));}
-  function deleteTransaction(id){setTransactions(prev=>prev.filter(t=>t.id!==id));}
-  function clearMonth(key){
+  function updateTransaction(id,updates){
+    setTransactions(prev=>{
+      const next=prev.map(t=>{if(t.id!==id)return t;const u={...t,...updates};if(updates.date)u.month=toMonthKey(updates.date);return u;});
+      const updated=next.find(t=>t.id===id);
+      if(updated) dbUpsertTransactions([updated]).catch(console.error);
+      return next;
+    });
+  }
+  function deleteTransaction(id){
+    setTransactions(prev=>prev.filter(t=>t.id!==id));
+    dbDeleteTransaction(id).catch(console.error);
+  }
+  async function clearMonth(key){
     setTransactions(prev=>prev.filter(t=>t.month!==key));
     setAccountBalances(prev=>{const u={...prev};ACCOUNTS.forEach(a=>delete u[`${a.id}-${key}`]);return u;});
-    // Unlock month — delete snapshot so standard template applies again
     setMonthlyCategories(prev=>{const u={...prev};delete u[key];return u;});
+    // Sync deletions to Supabase
+    dbDeleteMonthTransactions(key).catch(console.error);
+    dbDeleteBalances(key).catch(console.error);
+    dbDeleteMonthlyCategory(key).catch(console.error);
     showToast(`Cleared ${monthLabel(key)}`);
   }
-  function updateMerchantMemory(descKey,rule){setMerchantMemory(prev=>({...prev,[descKey.toLowerCase().trim()]:rule}));}
+  function updateMerchantMemory(descKey,rule){
+    const k = descKey.toLowerCase().trim();
+    setMerchantMemory(prev=>({...prev,[k]:rule}));
+    dbSaveMerchantMemory(k,rule).catch(console.error);
+  }
   function bulkReCategorize(description,main,sub,section){
     const lower=description.toLowerCase().trim();let count=0;
     setTransactions(prev=>prev.map(t=>{if(t.description.toLowerCase().trim()===lower&&(t.mainCategory!==main||t.subCategory!==sub)){count++;return{...t,mainCategory:main,subCategory:sub,section,isTransfer:section==="transfer"};}return t;}));
@@ -409,6 +448,9 @@ export default function App() {
           </button>
         ))}
         <div className="nav-actions">
+          {syncing && <span className="sync-badge">⟳ Syncing...</span>}
+          {syncError && <span className="sync-error" title="Using local data">⚠ Offline</span>}
+          {!syncing && !syncError && lastSyncRef.current && <span className="sync-ok" title={`Last synced: ${lastSyncRef.current.toLocaleTimeString()}`}>☁ Synced</span>}
           <button className="btn-ghost btn-sm" onClick={handleExport}>⬆ Export</button>
           <button className="btn-ghost btn-sm" onClick={()=>importRef.current.click()}>⬇ Import</button>
           <input ref={importRef} type="file" accept=".json" style={{display:"none"}} onChange={handleImportFile}/>
